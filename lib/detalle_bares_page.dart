@@ -5,16 +5,21 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'db_service.dart';
 
-class DetalleLugarPage extends StatefulWidget {
-  final Map<String, dynamic> lugar;
+class DetalleBarPage extends StatefulWidget {
+  final Map<String, dynamic> bar;
+  final Map<String, dynamic>? usuario;
 
-  const DetalleLugarPage({super.key, required this.lugar});
+  const DetalleBarPage({
+    super.key,
+    required this.bar,
+    this.usuario,
+  });
 
   @override
-  State<DetalleLugarPage> createState() => _DetalleLugarPageState();
+  State<DetalleBarPage> createState() => _DetalleBarPageState();
 }
 
-class _DetalleLugarPageState extends State<DetalleLugarPage> {
+class _DetalleBarPageState extends State<DetalleBarPage> {
   late List imagenes;
   final PageController _pageCtrl = PageController();
 
@@ -24,17 +29,17 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
   @override
   void initState() {
     super.initState();
-    imagenes = widget.lugar["imagenes"] != null
-        ? jsonDecode(widget.lugar["imagenes"])
+
+    imagenes = widget.bar["imagenes"] != null
+        ? jsonDecode(widget.bar["imagenes"])
         : [];
 
     cargarComentarios();
   }
 
-  // ================= COMENTARIOS =================
   Future<void> cargarComentarios() async {
     final lista = await DBService.instance
-        .obtenerComentariosDeLugar(widget.lugar["id"]);
+        .obtenerComentariosDeRestaurante(widget.bar["id"]);
 
     setState(() {
       comentarios = lista;
@@ -45,23 +50,22 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
     final texto = comentarioCtrl.text.trim();
     if (texto.isEmpty) return;
 
-    await DBService.instance.agregarComentario(
-      lugarId: widget.lugar["id"],
-      usuarioId: null, // si luego usas sesión, aquí irá el ID de usuario
+    await DBService.instance.insertarComentario(
+      usuarioId: widget.usuario?["id"],
+      restauranteId: widget.bar["id"],
       texto: texto,
-      fecha: DateTime.now().toString(),
     );
 
     comentarioCtrl.clear();
     await cargarComentarios();
   }
 
-  // ================= GOOGLE MAPS =================
   Future<void> _abrirComoLlegar() async {
     final q = Uri.encodeComponent(
-        "${widget.lugar["nombre"]}, ${widget.lugar["direccion"]}, Sucre Bolivia");
+        "${widget.bar["nombre"]}, ${widget.bar["direccion"]}, Sucre Bolivia");
 
-    final uri = Uri.parse("https://www.google.com/maps/search/?api=1&query=$q");
+    final uri =
+        Uri.parse("https://www.google.com/maps/search/?api=1&query=$q");
 
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -74,9 +78,10 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
 
   @override
   Widget build(BuildContext context) {
-    final lugar = widget.lugar;
+    final r = widget.bar;
 
     return Scaffold(
+      
       backgroundColor: Colors.white,
         drawer: Drawer(
     shape: const RoundedRectangleBorder(
@@ -163,7 +168,6 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ================= TÍTULO APP =================
               Text(
                 "AppTurismo",
                 style: GoogleFonts.poppins(
@@ -171,20 +175,15 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-
               const SizedBox(height: 14),
 
-              // =========== FLECHA + MENÚ + BUSCADOR ===========
               Row(
                 children: [
-                  // Flecha atrás
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: const Icon(Icons.arrow_back_ios_new, size: 24),
                   ),
                   const SizedBox(width: 10),
-
-                  // Menú hamburguesa
                   Builder(
                     builder: (context) {
                       return GestureDetector(
@@ -197,10 +196,7 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
                     },
                   ),
 
-
                   const SizedBox(width: 12),
-
-                  // Buscador
                   Expanded(
                     child: Container(
                       height: 45,
@@ -222,9 +218,8 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
 
               const SizedBox(height: 22),
 
-              // =============== TÍTULO DEL LUGAR ===============
               Text(
-                lugar["nombre"],
+                r["nombre"],
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -233,12 +228,10 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
 
               const SizedBox(height: 20),
 
-              // ================== CARRUSEL ==================
               _carruselImagenes(),
 
               const SizedBox(height: 20),
 
-              // ================= DESCRIPCIÓN =================
               Text(
                 "DESCRIPCIÓN",
                 style: GoogleFonts.poppins(
@@ -248,13 +241,12 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
               ),
               const SizedBox(height: 4),
               Text(
-                lugar["descripcion"] ?? "",
+                r["descripcion"] ?? "",
                 style: GoogleFonts.poppins(fontSize: 14),
               ),
 
               const SizedBox(height: 20),
 
-              // ================= DIRECCIÓN =================
               Text(
                 "DIRECCIÓN",
                 style: GoogleFonts.poppins(
@@ -263,9 +255,10 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
                 ),
               ),
               Text(
-                lugar["direccion"] ?? "",
+                r["direccion"] ?? "",
                 style: GoogleFonts.poppins(fontSize: 14),
               ),
+
               const SizedBox(height: 10),
 
               GestureDetector(
@@ -289,7 +282,6 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
 
               const SizedBox(height: 22),
 
-              // ================= HORARIO =================
               Text(
                 "HORARIO",
                 style: GoogleFonts.poppins(
@@ -298,13 +290,12 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
                 ),
               ),
               Text(
-                lugar["horario"] ?? "Sin horario registrado",
+                r["horario"] ?? "Sin horario registrado",
                 style: GoogleFonts.poppins(fontSize: 14),
               ),
 
               const SizedBox(height: 22),
 
-              // ================= COMENTARIOS =================
               Text(
                 "COMENTARIOS",
                 style: GoogleFonts.poppins(
@@ -331,8 +322,8 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 8),
 
+              const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
@@ -373,7 +364,6 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
     );
   }
 
-  // ================= CARRUSEL =================
   Widget _carruselImagenes() {
     if (imagenes.isEmpty) {
       return Container(
@@ -391,18 +381,11 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
             controller: _pageCtrl,
             itemCount: imagenes.length,
             itemBuilder: (_, i) {
-              return GestureDetector(
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  "/fullImage",
-                  arguments: imagenes[i],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Image.asset(
-                    imagenes[i],
-                    fit: BoxFit.cover,
-                  ),
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  imagenes[i],
+                  fit: BoxFit.cover,
                 ),
               );
             },
@@ -422,7 +405,6 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
     );
   }
 
-  // ================= ITEM COMENTARIO =================
   Widget _comentarioItem({
     required String usuario,
     required String texto,
