@@ -9,6 +9,8 @@ import 'favoritos_page.dart';
 import 'bares_page.dart';
 import 'detalle_lugar_page.dart';
 import 'full_image_page.dart';
+import 'fechas_destacadas_page.dart'; 
+import 'recomendaciones_page.dart';
 
 
 void main() {
@@ -80,8 +82,18 @@ class MyApp extends StatelessWidget {
           final String img = ModalRoute.of(context)!.settings.arguments as String;
           return FullImagePage(image: img);
         },
+        "/fechas": (context) {
+          final usuario = ModalRoute.of(context)!.settings.arguments
+              as Map<String, dynamic>?;
+          return FechasDestacadasPage(usuario: usuario);
+        },
+        "/recomendaciones": (context) {
+          final usuario = ModalRoute.of(context)!.settings.arguments
+              as Map<String, dynamic>?;
+          return RecomendacionesPage(usuario: usuario); 
 
-
+        }
+        
       },
     );
   }

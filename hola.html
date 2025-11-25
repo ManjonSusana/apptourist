@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulación Flutter: Itinerario Final</title>
+    <style>
+        /* Estilos Globales de la App Flutter */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .phone-container {
+            width: 375px;
+            min-height: 850px;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        /* Estilo de la AppBar */
+        .app-bar {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .app-bar-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Contenido Principal */
+        .content {
+            padding: 20px;
+        }
+
+        /* --- Títulos de Sección --- */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .main-result-title {
+             font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+
+        /* --- Chips de Preferencia --- */
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .chip {
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        /* Simulación de Chip Seleccionado */
+        .chip.selected {
+            background-color: #D0C2FFCC; /* Morado con opacidad (selectedColor) */
+            color: #333;
+            border: 1px solid #D0C2FF;
+        }
+
+        /* Simulación de Chip No Seleccionado */
+        .chip:not(.selected) {
+            background-color: #f0f0f0; /* Gris claro (backgroundColor) */
+            color: #555;
+            border: 1px solid #f0f0f0;
+        }
+
+        /* --- Campo de Entrada de Días (Igual que antes) --- */
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+        }
+        
+        .input-group label {
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: white;
+            padding: 0 5px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        /* --- Botón de Acción --- */
+        .action-button {
+            height: 50px;
+            background-color: #EADCCF; /* Color de Recomendaciones del menú */
+            border-radius: 12px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .action-button span {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* --- Estructura del Itinerario Día por Día --- */
+        .itinerary-day {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .day-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #D0C2FF; /* Morado */
+            margin-bottom: 5px;
+        }
+
+        .activity-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .activity-time {
+            width: 100px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .activity-text {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <div class="app-bar">
+            <span class="app-bar-icon">←</span>
+            <div class="app-bar-title">Itinerario Personalizado</div>
+        </div>
+
+        <div class="content">
+            <div class="section-title">1. Selecciona tus intereses principales:</div>
+            
+            <div class="chips-container">
+                <div class="chip selected">Histórico</div>
+                <div class="chip selected">Gastronomía</div>
+                <div class="chip">Cultural</div>
+                <div class="chip">Naturaleza</div>
+            </div>
+
+            <div class="section-title">2. Ingresa la duración de tu estadía:</div>
+            
+            <div class="input-group">
+                <label for="dias-input">Días de estadía</label>
+                <input type="text" id="dias-input" value="2" readonly> 
+            </div>
+
+            <div class="action-button">
+                <span>Generar Itinerario</span>
+            </div>
+
+            <div class="main-result-title">3. Tu Plan de Viaje por Día:</div>
+            
+            <div class="itinerary-day">
+                <div class="day-title">Día 1:</div>
+                <div class="activity-row">
+                    <span class="activity-time">Mañana (8:00)</span>
+                    <span class="activity-text">Visita guiada a la Casa de la Libertad.</span>
+                </div>
+                <div class="activity-row">
+                    <span class="activity-time">Almuerzo (13:00)</span>
+                    <span class="activity-text">Salteñas en "El Patio" o similar.</span>
+                </div>
+                <div class="activity-row">
+                    <span class="activity-time">Tarde (15:00)</span>
+                    <span class="activity-text">Convento de San Felipe Neri (terrazas y vistas).</span>
+                </div>
+                <div class="activity-row">
+                    <span class="activity-time">Noche (20:00)</span>
+                    <span class="activity-text">Cena con ambiente local y descanso.</span>
+                </div>
+            </div>
+
+            <div class="itinerary-day">
+                <div class="day-title">Día 2:</div>
+                <div class="activity-row">
+                    <span class="activity-time">Mañana (9:00)</span>
+                    <span class="activity-text">Mercado Central (experiencia local y compras).</span>
+                </div>
+                <div class="activity-row">
+                    <span class="activity-time">Almuerzo (13:30)</span>
+                    <span class="activity-text">Prueba el "Mondongo" en un restaurante tradicional.</span>
+                </div>
+                <div class="activity-row">
+                    <span class="activity-time">Tarde (16:00)</span>
+                    <span class="activity-text">Mirador de La Recoleta para ver el atardecer.</span>
+                </div>
+                <div class="activity-row">
+                    <span class="activity-time">Noche (20:30)</span>
+                    <span class="activity-text">Ruta del chocolate sucrense (degustación y postres).</span>
+                </div>
+            </div>
+            
+            <div class="itinerary-day" style="border-bottom: none;"></div> 
+        </div>
+    </div>
+</body>
+</html>
