@@ -39,19 +39,20 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
       return;
     }
 
-    // Aquí puedes cambiar "Sucre, Bolivia" por tu ciudad por defecto
+    // Puedes cambiar "Sucre, Bolivia" por tu ciudad por defecto
     final query = Uri.encodeComponent("$nombre, $direccion, Sucre, Bolivia");
 
     final uri = Uri.parse(
       "https://www.google.com/maps/search/?api=1&query=$query",
     );
 
-    if (await canLaunchUrl(uri)) {
+    try {
+      // Llamamos directamente, sin canLaunchUrl, para evitar el problema
       await launchUrl(
         uri,
         mode: LaunchMode.externalApplication,
       );
-    } else {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("No se pudo abrir Google Maps.")),
       );
