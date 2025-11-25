@@ -9,14 +9,10 @@ import 'favoritos_page.dart';
 import 'bares_page.dart';
 import 'detalle_lugar_page.dart';
 import 'full_image_page.dart';
-<<<<<<< HEAD
-import 'fechas_destacadas_page.dart'; 
+import 'fechas_destacadas_page.dart';
 import 'recomendaciones_page.dart';
-=======
 import 'detalle_restaurante_page.dart';
 import 'detalle_bares_page.dart';
->>>>>>> 012c0cdbb05fc2a00deb9ec622290cdfce7cba98
-
 
 void main() {
   runApp(const MyApp());
@@ -117,7 +113,8 @@ class MyApp extends StatelessWidget {
         "/recomendaciones": (context) {
           final usuario = ModalRoute.of(context)!.settings.arguments
               as Map<String, dynamic>?;
-          return RecomendacionesPage(usuario: usuario); 
+          return RecomendacionesPage(usuario: usuario);
+        },
         "/detalleRestaurante": (context) {
             final args = ModalRoute.of(context)!.settings.arguments;
 
@@ -140,9 +137,7 @@ class MyApp extends StatelessWidget {
           },
         
 
-        }
-        
-      },
+        },
     );
   }
 }
