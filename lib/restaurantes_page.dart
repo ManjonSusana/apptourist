@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'db_service.dart';
-import 'home_page.dart';
+import 'detalle_restaurante_page.dart';
 
 class RestaurantesPage extends StatefulWidget {
   final Map<String, dynamic>? usuario;
@@ -23,28 +23,40 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
     cargarDatos();
   }
 
+  // ============================================================
+  // CARGAR DATOS
+  // ============================================================
   Future<void> cargarDatos() async {
     final db = DBService.instance;
 
-    final listaRestaurantes = await db.obtenerRestaurantes();
+    final lista = await db.obtenerRestaurantes();
 
-    List<int> listaFavoritos = [];
+    // ⭐ Agregamos rating si no existe (porque tu tabla no lo tiene)
+    for (var r in lista) {
+      if (r["rating"] == null) {
+        r["rating"] = 3.5 + (r["id"] % 3); // bonito y consistente
+      }
+    }
+
+    List<int> listaFav = [];
     if (widget.usuario != null) {
-      listaFavoritos =
-          await db.obtenerFavoritosIds(widget.usuario!["id"]);
+      listaFav = await db.obtenerFavoritosIds(widget.usuario!["id"]);
     }
 
     setState(() {
-      restaurantes = listaRestaurantes;
-      favoritos = listaFavoritos;
+      restaurantes = lista;
+      favoritos = listaFav;
       cargando = false;
     });
   }
 
+  // ============================================================
+  // FAVORITOS
+  // ============================================================
   Future<void> toggleFav(int restauranteId) async {
     if (widget.usuario == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Inicia sesión para guardar favoritos.")),
+        const SnackBar(content: Text("Inicia sesión para guardar favoritos")),
       );
       return;
     }
@@ -62,173 +74,269 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              
-              // ----------------------------------
-              // CABECERA
-              // ----------------------------------
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Restaurantes",
-                    style: GoogleFonts.poppins(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  usuario == null
-                      ? const CircleAvatar(
-                          backgroundColor: Colors.grey,
-                          child: Icon(Icons.person, color: Colors.white),
-                        )
-                      : CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.purple.shade200,
-                          child: Text(
-                            usuario["nombre"][0].toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              color: Colors.black87,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        )
-                ],
-              ),
-
-              const SizedBox(height: 15),
-
-              const CustomSearchBar(),
-
-              const SizedBox(height: 20),
-
-              // ----------------------------------
-              // CONTENIDO
-              // ----------------------------------
-              Expanded(
-                child: cargando
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView(
-                        children: [
-                          Text(
-                            "Populares",
-                            style: GoogleFonts.poppins(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          SizedBox(
-                            height: 220,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: restaurantes.length,
-                              itemBuilder: (context, index) {
-                                final r = restaurantes[index];
-                                final esFav = favoritos.contains(r["id"]);
-
-                                return tarjetaRestaurante(
-                                  id: r["id"],
-                                  nombre: r["nombre"],
-                                  direccion: r["direccion"] ?? "",
-                                  img: r["imagenAsset"],
-                                  esFav: esFav,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+        child: cargando
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ================= TÍTULO =================
+                    Text(
+                      "AppTurismo",
+                      style: GoogleFonts.poppins(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
                       ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ========= MENÚ + BUSCADOR + PERFIL =========
+                    Row(
+                      children: [
+                        // Menú
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.menu, size: 28),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        // Buscador
+                        Expanded(
+                          child: Container(
+                            height: 45,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(14),
+                              color: Colors.grey.shade200,
+                            ),
+                            child: const TextField(
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                hintText: "Buscar...",
+                                prefixIcon: Icon(Icons.search),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        // Perfil usuario
+                        CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Colors.purple.shade300,
+                          child: Text(
+                            usuario == null
+                                ? "?"
+                                : usuario["nombre"][0].toUpperCase(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontSize: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    // ========= TÍTULO DE PÁGINA =========
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 22, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade100,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.black, width: 1),
+                          ),
+                          child: Text(
+                            "RESTAURANTES",
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.favorite_border, size: 32),
+                      ],
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    // ====================================================
+                    // RESTAURANTES CAROS
+                    // ====================================================
+                    Text(
+                      "RESTAURANTES CAROS",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _listaHorizontal(
+                      restaurantes.where((r) => r["precio"] == "alto").toList(),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    // ====================================================
+                    // RESTAURANTES ECONÓMICOS
+                    // ====================================================
+                    Text(
+                      "RESTAURANTES ECONÓMICOS",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _listaHorizontal(
+                      restaurantes.where((r) => r["precio"] == "bajo").toList(),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    // ====================================================
+                    // POPULARES
+                    // ====================================================
+                    Text(
+                      "POPULARES",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _listaHorizontal(restaurantes),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
       ),
     );
   }
 
-  // --------------------------------------------------------------------
+  // ============================================================
+  // LISTA HORIZONTAL
+  // ============================================================
+  Widget _listaHorizontal(List<Map<String, dynamic>> lista) {
+    return SizedBox(
+      height: 240,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: lista.map((r) {
+          final esFav = favoritos.contains(r["id"]);
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DetalleRestaurantePage(
+                    restaurante: r,
+                    usuario: widget.usuario,
+                  ),
+                ),
+              );
+            },
+            child: _restauranteCard(r, esFav),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ============================================================
   // TARJETA DE RESTAURANTE
-  // --------------------------------------------------------------------
-  Widget tarjetaRestaurante({
-    required int id,
-    required String nombre,
-    required String direccion,
-    required String img,
-    required bool esFav,
-  }) {
+  // ============================================================
+  Widget _restauranteCard(Map<String, dynamic> r, bool esFav) {
+    final rating = (r["rating"] as num?)?.toStringAsFixed(1) ?? "3.5";
+
     return Container(
-      width: 170,
-      margin: const EdgeInsets.only(right: 16),
+      width: 220,
+      margin: const EdgeInsets.only(right: 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.black12),
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 6,
-            color: Colors.black.withOpacity(0.12),
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         children: [
           // Imagen
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-            child: Container(
-              height: 120,
-              width: double.infinity,
-              color: Colors.grey.shade300,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Image.asset(img, fit: BoxFit.cover),
-                  ),
-                  Positioned(
-                    right: 10,
-                    top: 10,
-                    child: GestureDetector(
-                      onTap: () => toggleFav(id),
-                      child: Icon(
-                        esFav ? Icons.favorite : Icons.favorite_border,
-                        size: 28,
-                        color: esFav ? Colors.red : Colors.white,
-                      ),
+            child: Stack(
+              children: [
+                Image.asset(
+                  r["imagenAsset"],
+                  height: 130,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  right: 10,
+                  top: 10,
+                  child: GestureDetector(
+                    onTap: () => toggleFav(r["id"]),
+                    child: Icon(
+                      esFav ? Icons.favorite : Icons.favorite_border,
+                      color: esFav ? Colors.red : Colors.white,
+                      size: 28,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
 
-          // Textos inferiores
+          // Info
           Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  nombre,
+                  r["nombre"],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
-                      fontSize: 15, fontWeight: FontWeight.w700),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
+                const SizedBox(height: 4),
                 Text(
-                  direccion,
+                  r["direccion"] ?? "",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: Colors.grey[700],
                   ),
-                )
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.star, size: 18, color: Colors.amber),
+                    const SizedBox(width: 4),
+                    Text(rating),
+                  ],
+                ),
               ],
             ),
           ),
