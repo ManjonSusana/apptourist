@@ -1,205 +1,241 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'HomePage.dart'; // para usar el SearchBar original
+import 'db_service.dart';
 
 class LugaresPage extends StatefulWidget {
-  final String? nombreUsuario;
+  final Map<String, dynamic>? usuario;
 
-  const LugaresPage({super.key, this.nombreUsuario});
+  const LugaresPage({super.key, this.usuario});
 
   @override
   State<LugaresPage> createState() => _LugaresPageState();
 }
 
 class _LugaresPageState extends State<LugaresPage> {
-  // Lista temporal de favoritos (luego lo conectamos a BD)
-  final Set<String> favoritos = {};
+  List<Map<String, dynamic>> lugares = [];
+  List<int> favoritos = [];
+  bool cargando = true;
 
-  void toggleFavorito(String lugar) {
+  @override
+  void initState() {
+    super.initState();
+    cargarDatos();
+  }
+
+  Future<void> cargarDatos() async {
+    final db = DBService.instance;
+
+    // Todos los lugares
+    final listaLugares = await db.obtenerLugares();
+
+    // Favoritos (si hay usuario)
+    List<int> listaFavs = [];
+    if (widget.usuario != null) {
+      listaFavs = await db.obtenerFavoritosIds(widget.usuario!["id"]);
+    }
+
     setState(() {
-      if (favoritos.contains(lugar)) {
-        favoritos.remove(lugar);
-      } else {
-        favoritos.add(lugar);
-      }
+      lugares = listaLugares;
+      favoritos = listaFavs;
+      cargando = false;
     });
+  }
+
+  Future<void> toggleFav(int lugarId) async {
+    if (widget.usuario == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Inicia sesión para guardar favoritos")),
+      );
+      return;
+    }
+
+    await DBService.instance.toggleFavorito(widget.usuario!["id"], lugarId);
+    await cargarDatos();
   }
 
   @override
   Widget build(BuildContext context) {
+    final usuario = widget.usuario;
+
     return Scaffold(
-      backgroundColor: Colors.white, // fondo limpio
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              // ---------------- CABECERA CON PERFIL ----------------
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "TurismoApp",
-                    style: GoogleFonts.poppins(
-                      fontSize: 28,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-
-                  // Avatar
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        "/perfil",
-                        arguments: widget.nombreUsuario,
-                      );
-                    },
-                    child: CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Colors.purple.shade200,
-                      child: Text(
-                        widget.nombreUsuario != null
-                            ? widget.nombreUsuario![0].toUpperCase()
-                            : "P",
-                        style: const TextStyle(
-                            color: Colors.black, fontSize: 20),
-                      ),
-                    ),
-                  ),
-                ],
+              // ================= TÍTULO APP =================
+              Text(
+                "AppTurismo",
+                style: GoogleFonts.poppins(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
-              // ---------------- BARRA DE BUSQUEDA + MENU + INICIO ----------------
+              // ========= MENÚ + BUSCADOR + PERFIL =========
               Row(
                 children: [
-                  // Menu hamburguesa (sin fondo)
-                  IconButton(
-                    icon: const Icon(Icons.menu, size: 30),
-                    onPressed: () {},
-                  ),
-
-                  const SizedBox(width: 10),
-
-                  // BUSCADOR: usar el mismo widget que en HomePage (`CustomSearchBar`)
-                  Expanded(child: const CustomSearchBar()),
-
-                  const SizedBox(width: 10),
-
-                  // Botón Inicio minimalista
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Text(
-                      "INICIO",
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        color: Colors.blueAccent,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 15),
-
-              // ---------------- LUGARES + FAVORITOS ICONO ----------------
-              Row(
-                children: [
+                  // Menú hamburguesa
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 18, vertical: 8),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFC8C8),
+                      border: Border.all(color: Colors.black12),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      "LUGARES",
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                    child: const Icon(Icons.menu, size: 28),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Buscador
+                  Expanded(
+                    child: Container(
+                      height: 45,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        color: Colors.grey.shade200,
+                      ),
+                      child: const TextField(
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          hintText: "Buscar...",
+                          prefixIcon: Icon(Icons.search),
+                        ),
                       ),
                     ),
                   ),
 
                   const SizedBox(width: 12),
 
-                  // Favoritos: icono como botón que lleva a la pantalla de favoritos
-                  IconButton(
-                    icon: Icon(
-                      Icons.favorite,
-                      size: 28,
-                      color: favoritos.isEmpty ? Colors.grey : Colors.redAccent,
-                    ),
-                    tooltip: 'Ver favoritos',
-                    onPressed: () {
-                      // Navegar a la página de favoritos y pasar la lista de favoritos y usuario
-                      Navigator.pushNamed(
-                        context,
-                        '/favoritos',
-                        arguments: {
-                          'usuario': widget.nombreUsuario,
-                          'favoritos': favoritos.toList(),
-                        },
-                      );
+                  // Perfil usuario
+                  GestureDetector(
+                    onTap: () {
+                      if (usuario != null) {
+                        Navigator.pushNamed(
+                          context,
+                          "/perfil",
+                          arguments: usuario,
+                        );
+                      }
                     },
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colors.purple.shade300,
+                      child: Text(
+                        usuario == null
+                            ? "?"
+                            : usuario["nombre"][0].toUpperCase(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 22),
+              const SizedBox(height: 25),
 
-              // ---------------- SECCIÓN 1 ----------------
+              // ========= BOTÓN “LUGARES” + CORAZÓN GENERAL =========
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 22, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.pink.shade100,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.black, width: 1),
+                    ),
+                    child: Text(
+                      "LUGARES",
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.favorite_border, size: 32),
+                ],
+              ),
+
+              const SizedBox(height: 25),
+
+              // ================= LUGARES CAROS =================
               Text(
-                "Lugares Caros",
+                "LUGARES CAROS",
                 style: GoogleFonts.poppins(
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 12),
 
               SizedBox(
-                height: 220,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    lugarCard("Hotel Premium", "Av. Central 123"),
-                    lugarCard("Sky Tower", "C. del Sol 45"),
-                    lugarCard("Luxury Café", "Boulevard 11"),
-                  ],
-                ),
+                height: 240,
+                child: cargando
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: lugares
+                            .where((l) => l["categoria"] == "caro")
+                            .map((lugar) {
+                          final esFav = favoritos.contains(lugar["id"]);
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                "/detalleLugar",
+                                arguments: lugar, // 👈 enviamos el mapa completo
+                              );
+                            },
+                            child: _lugarCard(lugar, esFav),
+                          );
+                        }).toList(),
+                      ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 30),
 
-              // ---------------- SECCIÓN 2 ----------------
+              // ================= LUGARES ECONÓMICOS =================
               Text(
-                "Lugares Económicos",
+                "LUGARES ECONÓMICOS",
                 style: GoogleFonts.poppins(
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 12),
 
               SizedBox(
-                height: 220,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    lugarCard("Café Popular", "Mariscal 222"),
-                    lugarCard("Mercadito", "Barrio Centro"),
-                    lugarCard("Chifa Económico", "Villa Norte"),
-                  ],
-                ),
+                height: 240,
+                child: cargando
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: lugares
+                            .where((l) => l["categoria"] == "economico")
+                            .map((lugar) {
+                          final esFav = favoritos.contains(lugar["id"]);
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                "/detalleLugar",
+                                arguments: lugar,
+                              );
+                            },
+                            child: _lugarCard(lugar, esFav),
+                          );
+                        }).toList(),
+                      ),
               ),
             ],
           ),
@@ -208,80 +244,83 @@ class _LugaresPageState extends State<LugaresPage> {
     );
   }
 
-  // ------------------- CARD MODERNA + FAVORITOS -------------------
-  Widget lugarCard(String nombre, String direccion) {
-    final bool esFav = favoritos.contains(nombre);
+  // ================= TARJETA DE LUGAR =================
+  Widget _lugarCard(Map<String, dynamic> lugar, bool esFav) {
+    final ratingNum = lugar["rating"] as num?; // puede ser null
+    final ratingTexto =
+        ratingNum != null ? ratingNum.toStringAsFixed(1) : "3.2";
 
     return Container(
-      width: 170,
-      margin: const EdgeInsets.only(right: 16),
+      width: 220,
+      margin: const EdgeInsets.only(right: 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        color: Colors.white,
         border: Border.all(color: Colors.black12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          )
-        ],
+        color: Colors.white,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Imagen simulada (moderna)
+          // Imagen
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-            child: Container(
-              height: 110,
-              color: Colors.grey.shade300,
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: 10,
-                    top: 10,
-                    child: GestureDetector(
-                      onTap: () => toggleFavorito(nombre),
-                      child: Icon(
-                        esFav ? Icons.favorite : Icons.favorite_border,
-                        color: esFav ? Colors.red : Colors.black,
-                        size: 26,
-                      ),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(22)),
+            child: Stack(
+              children: [
+                Image.asset(
+                  lugar["imagenAsset"],
+                  height: 130,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  right: 10,
+                  top: 10,
+                  child: GestureDetector(
+                    onTap: () => toggleFav(lugar["id"]),
+                    child: Icon(
+                      esFav ? Icons.favorite : Icons.favorite_border,
+                      color: esFav ? Colors.red : Colors.white,
+                      size: 28,
                     ),
                   ),
-                ],
-              ),
+                )
+              ],
             ),
           ),
 
+          // Info
           Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  nombre,
+                  lugar["nombre"],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
-                  direccion,
+                  lugar["direccion"] ?? "",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
-                      fontSize: 13, color: Colors.grey[700]),
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Row(
-                  children: const [
-                    Icon(Icons.star, color: Colors.amber, size: 18),
-                    Icon(Icons.star, color: Colors.amber, size: 18),
-                    Icon(Icons.star, color: Colors.amber, size: 18),
-                    SizedBox(width: 4),
-                    Text("3.2", style: TextStyle(fontSize: 12)),
+                  children: [
+                    const Icon(Icons.star, size: 18, color: Colors.amber),
+                    const SizedBox(width: 4),
+                    Text(ratingTexto),
                   ],
-                ),
+                )
               ],
             ),
           )

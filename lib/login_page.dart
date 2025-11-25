@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'HomePage.dart';
+import 'home_page.dart';
+import 'db_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,160 +11,120 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController nombreController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  final correoCtrl = TextEditingController();
+  final passCtrl = TextEditingController();
 
-  @override
-  void dispose() {
-    nombreController.dispose();
-    passwordController.dispose();
-    super.dispose();
+  bool cargando = false;
+
+  Future<void> login() async {
+    final correo = correoCtrl.text.trim();
+    final pass = passCtrl.text.trim();
+
+    if (correo.isEmpty || pass.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Completa todos los campos")),
+      );
+      return;
+    }
+
+    setState(() => cargando = true);
+
+    final usuario = await DBService.instance.loginUsuario(correo, pass);
+
+    if (usuario == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Correo o contraseña incorrectos")),
+      );
+      setState(() => cargando = false);
+      return;
+    }
+
+    // PASAMOS EL USUARIO COMPLETO
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HomePage(usuario: usuario),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Fondo blanco
-          Positioned.fill(
-            child: Container(color: Colors.white),
-          ),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(30),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                "Iniciar Sesión",
+                style: GoogleFonts.poppins(
+                    fontSize: 32, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 40),
 
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(30),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 20),
+              campo("Correo", correoCtrl),
+              const SizedBox(height: 25),
 
-                  // TÍTULO
-                  Text(
-                    "TURISMO APP",
-                    style: GoogleFonts.poppins(
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              campo("Contraseña", passCtrl, oculto: true),
+              const SizedBox(height: 35),
 
-                  const SizedBox(height: 50),
-
-                  // --- Nombre usuario ---
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "NOMBRE USUARIO",
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-
-                  TextField(
-                    controller: nombreController,          // 👈 guarda el texto
-                    decoration: const InputDecoration(
-                      hintText: "Ingresa tu nombre de usuario",
-                      border: UnderlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // --- Contraseña ---
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "CONTRASEÑA",
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      hintText: "Ingresa tu contraseña",
-                      border: UnderlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // BOTÓN INICIO DE SESIÓN
-                  SizedBox(
-                    width: 180,
-                    height: 45,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // Más adelante aquí pondremos la validación real
-                        final nombre = nombreController.text.trim();
-
-                        if (nombre.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Ingresa tu nombre de usuario"),
-                            ),
-                          );
-                          return;
-                        }
-
-                        // Ir al HomePage con el nombre del usuario
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => HomePage(
-                              nombreUsuario: nombre,   // 👈 se lo pasamos
-                            ),
-                          ),
-                        );
-                      },
+              cargando
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.lightBlueAccent,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        minimumSize: const Size(200, 45),
                       ),
                       child: Text(
-                        "INICIO SESIÓN",
+                        "Iniciar Sesión",
                         style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                            fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 25),
+              const SizedBox(height: 20),
 
-                  // ENLACE REGISTRARSE
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, "/register");
-                    },
-                    child: Text(
-                      "¿No tienes cuenta? Regístrate",
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.blueAccent,
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, "/register"),
+                child: Text(
+                  "¿No tienes cuenta? Regístrate",
+                  style: GoogleFonts.poppins(
+                    color: Colors.blueAccent,
+                    fontSize: 16,
+                    decoration: TextDecoration.underline,
                   ),
-                ],
-              ),
-            ),
-          )
-        ],
+                ),
+              )
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  Widget campo(String titulo, TextEditingController ctrl,
+      {bool oculto = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          titulo,
+          style:
+              GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16),
+        ),
+        TextField(
+          controller: ctrl,
+          obscureText: oculto,
+          decoration: const InputDecoration(
+            border: UnderlineInputBorder(),
+          ),
+        )
+      ],
     );
   }
 }
