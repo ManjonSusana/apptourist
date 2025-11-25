@@ -81,7 +81,87 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
     final r = widget.bar;
 
     return Scaffold(
+      
       backgroundColor: Colors.white,
+        drawer: Drawer(
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.horizontal(right: Radius.circular(25)),
+    ),
+    child: ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        DrawerHeader(
+          decoration: BoxDecoration(
+            color: Colors.purple.shade200,
+          ),
+          child: const Text(
+            'AppTurismo',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+        ),
+
+        ListTile(
+          leading: const Icon(Icons.place),
+          title: const Text("Lugares"),
+          onTap: () {
+            Navigator.pushNamed(context, "/lugares");
+          },
+        ),
+
+        ListTile(
+          leading: const Icon(Icons.restaurant),
+          title: const Text("Restaurantes"),
+          onTap: () {
+            Navigator.pushNamed(context, "/restaurantes");
+          },
+        ),
+
+        ListTile(
+          leading: const Icon(Icons.local_bar),
+          title: const Text("Bares"),
+          onTap: () {
+            Navigator.pushNamed(context, "/bares");
+          },
+        ),
+
+        ListTile(
+          leading: const Icon(Icons.event),
+          title: const Text("Fechas destacadas"),
+          onTap: () {
+            Navigator.pushNamed(context, "/fechas");
+          },
+        ),
+
+        ListTile(
+          leading: const Icon(Icons.recommend),
+          title: const Text("Recomendaciones"),
+          onTap: () {
+            Navigator.pushNamed(context, "/recomendaciones");
+          },
+        ),
+
+        const Divider(),
+
+        ListTile(
+          leading: const Icon(Icons.person),
+          title: const Text("Perfil"),
+          onTap: () {
+            Navigator.pushNamed(context, "/perfil");
+          },
+        ),
+
+        ListTile(
+          leading: const Icon(Icons.logout),
+          title: const Text("Cerrar sesión"),
+          onTap: () {
+            Navigator.pushNamedAndRemoveUntil(
+                context, "/login", (_) => false);
+          },
+        ),
+      ],
+    ),
+  ),
+
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(18),
@@ -104,14 +184,18 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
                     child: const Icon(Icons.arrow_back_ios_new, size: 24),
                   ),
                   const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black26),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.menu, size: 26),
+                  Builder(
+                    builder: (context) {
+                      return GestureDetector(
+                        onTap: () => Scaffold.of(context).openDrawer(),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          child: const Icon(Icons.menu, size: 26),
+                        ),
+                      );
+                    },
                   ),
+
                   const SizedBox(width: 12),
                   Expanded(
                     child: Container(
