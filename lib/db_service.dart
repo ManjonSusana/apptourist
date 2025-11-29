@@ -21,7 +21,7 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 30, // <<<<< NUEVA VERSION
+      version: 34, // <<<<< NUEVA VERSION
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -859,13 +859,13 @@ await db.insert("bares", {
   "descripcion": "Cocktails internacionales y ambiente sofisticado.",
   "direccion": "Calle Loa 677",
   "ambiente": "elegante",
-  "imagenAsset": "assets/bares/republic.jpg",
+  "imagenAsset": "assets/bares/republic.jpeg",
   "rating": 4.5,
   "imagenes": jsonEncode([
-    "assets/bares/republic1.jpg",
-    "assets/bares/republic2.jpg",
-    "assets/bares/republic3.jpg",
-    "assets/bares/republic4.jpg",
+    "assets/bares/republic1.jpeg",
+    "assets/bares/republic2.jpeg",
+    "assets/bares/republic3.jpeg",
+    "assets/bares/republic4.jpeg",
   ]),
   "horario": "19:00 - 02:00",
   "latitud": -19.04710,
@@ -877,13 +877,13 @@ await db.insert("bares", {
   "descripcion": "Bar con terraza y vista privilegiada a Sucre.",
   "direccion": "La Recoleta",
   "ambiente": "romántico",
-  "imagenAsset": "assets/bares/recoleta.jpg",
+  "imagenAsset": "assets/bares/recoleta.jpeg",
   "rating": 4.7,
   "imagenes": jsonEncode([
-    "assets/bares/recoleta1.jpg",
-    "assets/bares/recoleta2.jpg",
-    "assets/bares/recoleta3.jpg",
-    "assets/bares/recoleta4.jpg",
+    "assets/bares/recoleta1.jpeg",
+    "assets/bares/recoleta2.jpeg",
+    "assets/bares/recoleta3.jpeg",
+    "assets/bares/recoleta4.jpeg",
   ]),
   "horario": "16:00 - 01:00",
   "latitud": -19.05052,

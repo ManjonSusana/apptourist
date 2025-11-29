@@ -14,6 +14,7 @@ import 'recomendaciones_page.dart';
 import 'detalle_restaurante_page.dart';
 import 'detalle_bares_page.dart';
 
+
 void main() {
   runApp(const MyApp());
 }
@@ -114,7 +115,7 @@ class MyApp extends StatelessWidget {
           final usuario = ModalRoute.of(context)!.settings.arguments
               as Map<String, dynamic>?;
           return RecomendacionesPage(usuario: usuario);
-        },
+          },
         "/detalleRestaurante": (context) {
             final args = ModalRoute.of(context)!.settings.arguments;
 
@@ -137,7 +138,9 @@ class MyApp extends StatelessWidget {
           },
         
 
-        },
+      
+        
+      },
     );
   }
 }
