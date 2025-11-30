@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -11,9 +12,26 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late Map<String, dynamic>? usuario;
+
+  @override
+  void initState() {
+    super.initState();
+    usuario = widget.usuario;
+  }
+
+  @override
+  void didUpdateWidget(HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.usuario != oldWidget.usuario) {
+      setState(() {
+        usuario = widget.usuario;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final usuario = widget.usuario;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -40,7 +58,7 @@ class _HomePageState extends State<HomePage> {
                   if (usuario == null)
                     _botonIniciarSesion(context)
                   else
-                    _iconoPerfil(context, usuario),
+                    _iconoPerfil(context, usuario!),
                 ],
               ),
 
@@ -121,21 +139,34 @@ class _HomePageState extends State<HomePage> {
 
   // -------------------- ICONO PERFIL --------------------
   Widget _iconoPerfil(BuildContext context, Map<String, dynamic> usuario) {
+    final fotoPerfil = usuario["fotoPerfil"];
+    
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, "/perfil", arguments: usuario);
+      onTap: () async {
+        final usuarioActualizado = await Navigator.pushNamed(context, "/perfil", arguments: usuario);
+        // Actualizar el usuario con los datos recibidos del perfil
+        if (usuarioActualizado != null && usuarioActualizado is Map<String, dynamic>) {
+          setState(() {
+            this.usuario = usuarioActualizado;
+          });
+        }
       },
       child: CircleAvatar(
         radius: 24,
         backgroundColor: Colors.purple[200],
-        child: Text(
-          usuario["nombre"][0].toUpperCase(),
-          style: const TextStyle(
-            color: Colors.black87,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        backgroundImage: fotoPerfil != null && fotoPerfil.isNotEmpty
+            ? FileImage(File(fotoPerfil))
+            : null,
+        child: fotoPerfil == null || fotoPerfil.isEmpty
+            ? Text(
+                usuario["nombre"][0].toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            : null,
       ),
     );
   }

@@ -86,9 +86,9 @@ class _PerfilPageState extends State<PerfilPage> {
 
       print("✓ Perfil actualizado: $resultado filas");
 
-      // Los datos ya están guardados en la base de datos
-      // No necesitamos actualizar el objeto usuario en memoria
-
+      // Recargar los datos del usuario desde la base de datos
+      final usuarioActualizado = await DBService.instance.obtenerUsuarioPorId(widget.usuario["id"]);
+      
       if (mounted) {
         setState(() {
           _editando = false;
@@ -124,7 +124,14 @@ class _PerfilPageState extends State<PerfilPage> {
     final nombre = widget.usuario["nombre"] ?? "";
     final correo = widget.usuario["correo"] ?? "";
 
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        // Retornar el usuario actualizado cuando se cierra la página
+        final usuarioActualizado = await DBService.instance.obtenerUsuarioPorId(widget.usuario["id"]);
+        Navigator.pop(context, usuarioActualizado);
+        return false;
+      },
+      child: Scaffold(
       backgroundColor: Colors.grey[50],
       body: CustomScrollView(
         slivers: [
@@ -403,6 +410,7 @@ class _PerfilPageState extends State<PerfilPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
