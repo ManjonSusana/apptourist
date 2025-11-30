@@ -9,8 +9,9 @@ import 'favoritos_page.dart';
 import 'bares_page.dart';
 import 'detalle_lugar_page.dart';
 import 'full_image_page.dart';
-import 'fechas_destacadas_page.dart';
-import 'recomendaciones_page.dart';
+import 'pages/fechas_destacadas_page.dart';
+import 'pages/detalle_fecha_page.dart';
+import 'pages/recomendaciones_page.dart';
 import 'detalle_restaurante_page.dart';
 import 'detalle_bares_page.dart';
 
@@ -152,7 +153,35 @@ class MyApp extends StatelessWidget {
           final usuario =
               ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
           return RecomendacionesPage(usuario: usuario);
-        },
+          },
+        "/detalleRestaurante": (context) {
+            final args = ModalRoute.of(context)!.settings.arguments;
+
+            late Map<String, dynamic> restaurante;
+            Map<String, dynamic>? usuario;
+
+            if (args is Map<String, dynamic>) {
+              restaurante = args;
+            } else if (args is Map && args.containsKey("restaurante")) {
+              restaurante = args["restaurante"];
+              usuario = args["usuario"];
+            } else {
+              throw Exception("Argumentos inválidos para detalleRestaurante");
+            }
+
+            return DetalleRestaurantePage(
+              restaurante: restaurante,
+              usuario: usuario,
+            );
+          },
+        
+        "/detalleFecha": (context) {
+  final evento = ModalRoute.of(context)!.settings.arguments as EventoDestacado;
+  return DetalleFechaPage(evento: evento);
+},
+
+      
+        
       },
     );
   }

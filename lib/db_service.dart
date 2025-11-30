@@ -21,7 +21,7 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 45, // Forzar migración de campos de perfil
+      version: 41, // <<<<< NUEVA VERSION
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -123,7 +123,26 @@ class DBService {
       );
     ''');
 
+    // Tabla fechas destacadas
+await db.execute('''
+  CREATE TABLE fechas_destacadas(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo TEXT NOT NULL,
+    descripcion TEXT,
+    icono TEXT,
+    categoria TEXT,
+    fechaInicio TEXT,   -- guardaremos fecha como ISO8601 (String)
+    fechaFin TEXT,      -- opcional, puede ser null
+    permanente INTEGER DEFAULT 0,  -- 0 = no, 1 = sí
+    imagenAsset TEXT
+  );
+''');
+
+
+
     await _insertarDatosIniciales(db);
+
+
   }
 
   // ====================================================
@@ -181,6 +200,15 @@ class DBService {
     if (lugaresCount == 0) {
       await _insertarDatosIniciales(db);
     }
+    await db.execute("DROP TABLE IF EXISTS comentarios");
+    await db.execute("DROP TABLE IF EXISTS favoritos");
+    await db.execute("DROP TABLE IF EXISTS bares");
+    await db.execute("DROP TABLE IF EXISTS restaurantes");
+    await db.execute("DROP TABLE IF EXISTS lugares");
+    await db.execute("DROP TABLE IF EXISTS usuarios");
+    await db.execute("DROP TABLE IF EXISTS fechas_destacadas");
+
+    await _onCreate(db, newV);
   }
 
   // ====================================================
@@ -1048,6 +1076,52 @@ await db.insert("bares", {
   "longitud": -65.26110,
 });
 
+  // ==================== FECHAS DESTACADAS ====================
+await db.insert("fechas_destacadas", {
+  "titulo": "Día Internacional contra la Violencia a la Mujer",
+  "descripcion": "Actividades de concientización y marchas pacíficas en la Plaza 25 de Mayo.",
+  "icono": "🎗️",
+  "categoria": "Reinvindicativas y Sociales",
+  "fechaInicio": DateTime(2025, 11, 25).toIso8601String(),
+  "fechaFin": DateTime(2025, 11, 25).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/mujer_violencia.jpg",
+});
+
+await db.insert("fechas_destacadas", {
+  "titulo": "Festival de Danzas Folklóricas",
+  "descripcion": "Muestra de danzas típicas de Chuquisaca y otras regiones de Bolivia.",
+  "icono": "💃",
+  "categoria": "Musical y Danza",
+  "fechaInicio": DateTime(2025, 11, 28).toIso8601String(),
+  "fechaFin": DateTime(2025, 11, 28).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/danzas_festival.jpg",
+});
+
+await db.insert("fechas_destacadas", {
+  "titulo": "Feria Navideña de Artesanías",
+  "descripcion": "Mercado de artesanías y regalos en el Parque Bolívar.",
+  "icono": "🛍️",
+  "categoria": "Ferias, Mercados y Comercio",
+  "fechaInicio": DateTime(2025, 12, 5).toIso8601String(),
+  "fechaFin": DateTime(2025, 12, 24).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/feria_navidad.jpg",
+});
+
+await db.insert("fechas_destacadas", {
+  "titulo": "Mercado Central Gastronómico",
+  "descripcion": "Sabores típicos de Sucre durante todo el año.",
+  "icono": "🍲",
+  "categoria": "Ferias, Mercados y Comercio",
+  "fechaInicio": DateTime(2025, 1, 1).toIso8601String(),
+  "fechaFin": DateTime(2025, 12, 31).toIso8601String(),
+  "permanente": 1,
+  "imagenAsset": "assets/fechas/mercado.jpg",
+});
+
+
 
   }
 
@@ -1266,7 +1340,6 @@ await db.insert("bares", {
       WHERE c.restauranteId = ?
       ORDER BY datetime(c.fecha) DESC
     """, [restauranteId]);
-
     return res;
   }
 
@@ -1290,4 +1363,14 @@ await db.insert("bares", {
       whereArgs: [comentarioId],
     );
   }
+  // ====================================================
+//               FECHAS DESTACADAS
+// ====================================================
+Future<List<Map<String, dynamic>>> obtenerFechasDestacadas() async {
+  final database = await db;
+  return await database.query(
+    "fechas_destacadas",
+    orderBy: "fechaInicio ASC",
+  );
+}
 }

@@ -39,4 +39,8 @@ flutter:
     - assets/images/
     - assets/lugares/
     - assets/restaurantes/
+<<<<<<< HEAD
     - assets/bares/
+=======
+    - assets/fechas/
+>>>>>>> fc0ea9c (fechas)
