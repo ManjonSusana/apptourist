@@ -21,7 +21,7 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 37, // Incrementado para limpiar duplicados
+      version: 45, // Forzar migración de campos de perfil
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -37,7 +37,14 @@ class DBService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
         correo TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL
+        password TEXT NOT NULL,
+        fotoPerfil TEXT,
+        telefono TEXT,
+        fechaNacimiento TEXT,
+        bio TEXT,
+        lugaresPreferidos TEXT,
+        restaurantesPreferidos TEXT,
+        ambiente TEXT
       );
     ''');
 
@@ -99,7 +106,8 @@ class DBService {
       CREATE TABLE favoritos(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         usuarioId INTEGER NOT NULL,
-        lugarId INTEGER NOT NULL
+        lugarId INTEGER NOT NULL,
+        tipo TEXT DEFAULT 'lugar'
       );
     ''');
 
@@ -122,14 +130,57 @@ class DBService {
   //                    UPGRADE
   // ====================================================
   Future _onUpgrade(Database db, int oldV, int newV) async {
-    await db.execute("DROP TABLE IF EXISTS comentarios");
-    await db.execute("DROP TABLE IF EXISTS favoritos");
-    await db.execute("DROP TABLE IF EXISTS bares");
-    await db.execute("DROP TABLE IF EXISTS restaurantes");
-    await db.execute("DROP TABLE IF EXISTS lugares");
-    await db.execute("DROP TABLE IF EXISTS usuarios");
-
-    await _onCreate(db, newV);
+    // Migración inteligente: solo agregar columnas faltantes sin borrar datos
+    
+    // Si venimos de versión anterior a 42, agregar columna 'tipo' a favoritos
+    if (oldV < 42) {
+      try {
+        await db.execute("ALTER TABLE favoritos ADD COLUMN tipo TEXT DEFAULT 'lugar'");
+      } catch (e) {
+        // La columna ya existe, ignorar
+        print("Columna 'tipo' ya existe o error al agregar: $e");
+      }
+    }
+    
+    // Si venimos de versión anterior a 45, agregar campos de perfil a usuarios
+    if (oldV < 45) {
+      try {
+        await db.execute("ALTER TABLE usuarios ADD COLUMN fotoPerfil TEXT");
+      } catch (e) {
+        // Columna ya existe
+      }
+      try {
+        await db.execute("ALTER TABLE usuarios ADD COLUMN telefono TEXT");
+      } catch (e) {
+        // Columna ya existe
+      }
+      try {
+        await db.execute("ALTER TABLE usuarios ADD COLUMN bio TEXT");
+      } catch (e) {
+        // Columna ya existe
+      }
+      try {
+        await db.execute("ALTER TABLE usuarios ADD COLUMN lugaresPreferidos TEXT");
+      } catch (e) {
+        // Columna ya existe
+      }
+      try {
+        await db.execute("ALTER TABLE usuarios ADD COLUMN restaurantesPreferidos TEXT");
+      } catch (e) {
+        // Columna ya existe
+      }
+      try {
+        await db.execute("ALTER TABLE usuarios ADD COLUMN ambiente TEXT");
+      } catch (e) {
+        // Columna ya existe
+      }
+    }
+    
+    // Insertar datos iniciales solo si las tablas están vacías
+    final lugaresCount = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM lugares'));
+    if (lugaresCount == 0) {
+      await _insertarDatosIniciales(db);
+    }
   }
 
   // ====================================================
@@ -617,14 +668,14 @@ await db.insert("bares", {
   "nombre": "GastroBar El Mercado",
   "descripcion": "Fusión gourmet con ingredientes frescos y carta de vinos premium.",
   "direccion": "Mercado Central, 2do nivel",
-  "precio": "alto",
-  "imagenAsset": "assets/restaurantes/gastrobar.jpg",
+  "ambiente": "premium",
+  "imagenAsset": "assets/bares/lounge360.jpg",
   "rating": 4.7,
   "imagenes": jsonEncode([
-    "assets/restaurantes/gastrobar1.jpg",
-    "assets/restaurantes/gastrobar2.jpg",
-    "assets/restaurantes/gastrobar3.jpg",
-    "assets/restaurantes/gastrobar4.jpg"
+    "assets/bares/lounge360_1.jpg",
+    "assets/bares/lounge360.jpg",
+    "assets/bares/terraza.jpg",
+    "assets/bares/skygarden.jpg"
   ]),
   "horario": "11:00 - 22:00",
   "latitud": -19.049101,
@@ -1029,6 +1080,47 @@ await db.insert("bares", {
     return res.isNotEmpty ? res.first : null;
   }
 
+  Future<int> actualizarPerfil({
+    required int usuarioId,
+    String? fotoPerfil,
+    String? telefono,
+    String? bio,
+    String? lugaresPreferidos,
+    String? restaurantesPreferidos,
+    String? ambiente,
+  }) async {
+    final database = await db;
+    
+    Map<String, dynamic> updates = {};
+    
+    if (fotoPerfil != null) updates["fotoPerfil"] = fotoPerfil;
+    if (telefono != null && telefono.isNotEmpty) updates["telefono"] = telefono;
+    if (bio != null && bio.isNotEmpty) updates["bio"] = bio;
+    if (lugaresPreferidos != null) updates["lugaresPreferidos"] = lugaresPreferidos;
+    if (restaurantesPreferidos != null) updates["restaurantesPreferidos"] = restaurantesPreferidos;
+    if (ambiente != null) updates["ambiente"] = ambiente;
+    
+    if (updates.isEmpty) return 0;
+    
+    return await database.update(
+      "usuarios",
+      updates,
+      where: "id = ?",
+      whereArgs: [usuarioId],
+    );
+  }
+
+  Future<Map<String, dynamic>?> obtenerUsuarioPorId(int usuarioId) async {
+    final database = await db;
+    final res = await database.query(
+      "usuarios",
+      where: "id = ?",
+      whereArgs: [usuarioId],
+      limit: 1,
+    );
+    return res.isNotEmpty ? res.first : null;
+  }
+
   // ====================================================
   //                     LUGARES
   // ====================================================
@@ -1066,30 +1158,42 @@ await db.insert("bares", {
   // ====================================================
   //                     FAVORITOS
   // ====================================================
-  Future<void> toggleFavorito(int usuarioId, int lugarId) async {
+  Future<void> toggleFavorito(int usuarioId, int lugarId, {String tipo = 'lugar'}) async {
     final database = await db;
 
     final existe = await database.query(
       "favoritos",
-      where: "usuarioId = ? AND lugarId = ?",
-      whereArgs: [usuarioId, lugarId],
+      where: "usuarioId = ? AND lugarId = ? AND tipo = ?",
+      whereArgs: [usuarioId, lugarId, tipo],
     );
 
     if (existe.isNotEmpty) {
       await database.delete(
         "favoritos",
-        where: "usuarioId = ? AND lugarId = ?",
-        whereArgs: [usuarioId, lugarId],
+        where: "usuarioId = ? AND lugarId = ? AND tipo = ?",
+        whereArgs: [usuarioId, lugarId, tipo],
       );
     } else {
       await database.insert("favoritos", {
         "usuarioId": usuarioId,
         "lugarId": lugarId,
+        "tipo": tipo,
       });
     }
   }
 
-  Future<List<int>> obtenerFavoritosIds(int usuarioId) async {
+  Future<List<int>> obtenerFavoritosIds(int usuarioId, {String tipo = 'lugar'}) async {
+    final database = await db;
+    final res = await database.query(
+      "favoritos",
+      where: "usuarioId = ? AND tipo = ?",
+      whereArgs: [usuarioId, tipo],
+    );
+
+    return res.map((e) => e["lugarId"] as int).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> obtenerTodosFavoritos(int usuarioId) async {
     final database = await db;
     final res = await database.query(
       "favoritos",
@@ -1097,7 +1201,7 @@ await db.insert("bares", {
       whereArgs: [usuarioId],
     );
 
-    return res.map((e) => e["lugarId"] as int).toList();
+    return res;
   }
 
   // ====================================================

@@ -31,25 +31,76 @@ class _FavoritosPageState extends State<FavoritosPage> {
       return;
     }
 
-    final usuarioId = widget.usuario!["id"] as int;
-    final favoritosIds = await DBService.instance.obtenerFavoritosIds(usuarioId);
-    final todosLugares = await DBService.instance.obtenerLugares();
+    try {
+      final usuarioId = widget.usuario!["id"] as int;
+      
+      // Obtener todos los favoritos del usuario
+      final todosFavoritos = await DBService.instance.obtenerTodosFavoritos(usuarioId);
+      
+      // Obtener datos de lugares, restaurantes y bares
+      final todosLugares = await DBService.instance.obtenerLugares();
+      final todosRestaurantes = await DBService.instance.obtenerRestaurantes();
+      final todosBares = await DBService.instance.obtenerBares();
+      
+      List<Map<String, dynamic>> favs = [];
+      
+      for (var fav in todosFavoritos) {
+        final id = fav["lugarId"] as int;
+        final tipo = (fav["tipo"] as String?) ?? 'lugar'; // Default si es null
+        
+        if (tipo == 'lugar') {
+          final lugar = todosLugares.firstWhere(
+            (l) => l["id"] == id,
+            orElse: () => {},
+          );
+          if (lugar.isNotEmpty) {
+            // Crear una copia mutable del Map
+            final lugarCopia = Map<String, dynamic>.from(lugar);
+            lugarCopia["tipo"] = "lugar";
+            favs.add(lugarCopia);
+          }
+        } else if (tipo == 'restaurante') {
+          final restaurante = todosRestaurantes.firstWhere(
+            (r) => r["id"] == id,
+            orElse: () => {},
+          );
+          if (restaurante.isNotEmpty) {
+            // Crear una copia mutable del Map
+            final restauranteCopia = Map<String, dynamic>.from(restaurante);
+            restauranteCopia["tipo"] = "restaurante";
+            favs.add(restauranteCopia);
+          }
+        } else if (tipo == 'bar') {
+          final bar = todosBares.firstWhere(
+            (b) => b["id"] == id,
+            orElse: () => {},
+          );
+          if (bar.isNotEmpty) {
+            // Crear una copia mutable del Map
+            final barCopia = Map<String, dynamic>.from(bar);
+            barCopia["tipo"] = "bar";
+            favs.add(barCopia);
+          }
+        }
+      }
 
-    final favs = todosLugares.where((lugar) {
-      final id = lugar["id"] as int;
-      return favoritosIds.contains(id);
-    }).toList();
-
-    setState(() {
-      lugaresFav = favs;
-      cargando = false;
-    });
+      setState(() {
+        lugaresFav = favs;
+        cargando = false;
+      });
+    } catch (e) {
+      print("ERROR al cargar favoritos: $e");
+      setState(() {
+        lugaresFav = [];
+        cargando = false;
+      });
+    }
   }
 
-  Future<void> _toggleFavorito(int lugarId) async {
+  Future<void> _toggleFavorito(int lugarId, String tipo) async {
     if (widget.usuario == null) return;
 
-    await DBService.instance.toggleFavorito(widget.usuario!["id"], lugarId);
+    await DBService.instance.toggleFavorito(widget.usuario!["id"], lugarId, tipo: tipo);
     await _cargarFavoritos();
   }
 
@@ -58,6 +109,24 @@ class _FavoritosPageState extends State<FavoritosPage> {
     final usuario = widget.usuario;
 
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Favoritos',
+          style: GoogleFonts.poppins(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
+      ),
+      drawer: _menuDrawer(usuario),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
@@ -65,40 +134,57 @@ class _FavoritosPageState extends State<FavoritosPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ---------------- CABECERA ----------------
+              // --- MENÚ HAMBURGUESA + BUSCADOR ---
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Favoritos",
-                    style: GoogleFonts.poppins(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      return IconButton(
+                        icon: const Icon(Icons.menu, size: 28),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                        padding: EdgeInsets.zero,
+                      );
+                    },
                   ),
-                  usuario == null
-                      ? const CircleAvatar(
-                          backgroundColor: Colors.grey,
-                          child: Icon(Icons.person, color: Colors.white),
-                        )
-                      : CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.purple.shade200,
-                          child: Text(
-                            usuario["nombre"][0].toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: CustomSearchBar(),
+                  ),
                 ],
               ),
 
               const SizedBox(height: 16),
 
-              const CustomSearchBar(),
+              // Botón de Favoritos (solo si hay usuario)
+              if (usuario != null)
+                GestureDetector(
+                  onTap: () {
+                    // Ya estamos en favoritos, no hace nada o recarga
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.purple.shade300),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.favorite, color: Colors.purple.shade700),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Mis Favoritos",
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.purple.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
               const SizedBox(height: 20),
 
@@ -145,6 +231,7 @@ class _FavoritosPageState extends State<FavoritosPage> {
           nombre: lugar["nombre"] ?? "",
           direccion: lugar["direccion"] ?? "",
           img: lugar["imagenAsset"] ?? "",
+          tipo: lugar["tipo"] ?? "lugar",
         );
       },
     );
@@ -155,6 +242,7 @@ class _FavoritosPageState extends State<FavoritosPage> {
     required String nombre,
     required String direccion,
     required String img,
+    required String tipo,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -216,12 +304,98 @@ class _FavoritosPageState extends State<FavoritosPage> {
           // Corazón para quitar de favoritos
           IconButton(
             icon: const Icon(Icons.favorite, color: Colors.red),
-            onPressed: () => _toggleFavorito(id),
+            onPressed: () => _toggleFavorito(id, tipo),
           ),
 
           const SizedBox(width: 8),
         ],
       ),
+    );
+  }
+
+  Drawer _menuDrawer(usuario) {
+    return Drawer(
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.horizontal(right: Radius.circular(25))),
+      child: Column(
+        children: [
+          Container(
+            height: 140,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.orange.shade400,
+                  Colors.pink.shade300,
+                ],
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(0),
+                bottomRight: Radius.circular(0),
+              ),
+            ),
+            child: Center(
+              child: Text(
+                "AppTourist",
+                style: GoogleFonts.poppins(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              children: [
+                _menuItem(Icons.place, "Lugares", () {
+                  Navigator.pushNamed(context, "/lugares", arguments: usuario);
+                }),
+                _menuItem(Icons.restaurant_menu, "Restaurantes", () {
+                  Navigator.pushNamed(context, "/restaurantes", arguments: usuario);
+                }),
+                _menuItem(Icons.local_bar, "Bares", () {
+                  Navigator.pushNamed(context, "/bares", arguments: usuario);
+                }),
+                _menuItem(Icons.event, "Actividades", () {
+                  Navigator.pushNamed(context, "/fechas", arguments: usuario);
+                }),
+                _menuItem(Icons.recommend, "Recomendaciones", () {
+                  Navigator.pushNamed(context, "/recomendaciones", arguments: usuario);
+                }),
+                const Divider(height: 20, thickness: 1),
+                _menuItem(Icons.person, "Perfil", () {
+                  Navigator.pushNamed(context, "/perfil", arguments: usuario);
+                }),
+                _menuItem(Icons.logout, "Cerrar sesión", () {
+                  Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
+                }, color: Colors.red),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _menuItem(IconData icon, String title, VoidCallback onTap, {Color? color}) {
+    return ListTile(
+      leading: Icon(icon, color: color ?? Colors.orange.shade700, size: 24),
+      title: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: color ?? Colors.black87,
+        ),
+      ),
+      onTap: onTap,
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -2),
     );
   }
 }

@@ -41,7 +41,7 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
 
     List<int> listaFav = [];
     if (widget.usuario != null) {
-      listaFav = await db.obtenerFavoritosIds(widget.usuario!["id"]);
+      listaFav = await db.obtenerFavoritosIds(widget.usuario!["id"], tipo: 'restaurante');
     }
 
     setState(() {
@@ -82,6 +82,7 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
     await DBService.instance.toggleFavorito(
       widget.usuario!["id"],
       restauranteId,
+      tipo: 'restaurante',
     );
 
     await cargarDatos();
@@ -140,32 +141,41 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
 
-                    const SizedBox(height: 25),
-
-                    // ------------ Título de la pantalla ------------
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 22, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.black, width: 1),
-                          ),
-                          child: Text(
-                            "RESTAURANTES",
-                            style: GoogleFonts.poppins(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
+                    // Botón de Favoritos (solo si hay usuario)
+                    if (usuario != null)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, "/favoritos", arguments: usuario);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.brown.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.brown.shade300),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.favorite, color: Colors.brown.shade700, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "Mis Favoritos",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.brown.shade700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        const Icon(Icons.favorite_border, size: 32),
-                      ],
-                    ),
+                      ),
 
                     const SizedBox(height: 25),
 

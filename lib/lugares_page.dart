@@ -30,7 +30,7 @@ class _LugaresPageState extends State<LugaresPage> {
 
     List<int> favs = [];
     if (widget.usuario != null) {
-      favs = await db.obtenerFavoritosIds(widget.usuario!["id"]);
+      favs = await db.obtenerFavoritosIds(widget.usuario!["id"], tipo: 'lugar');
     }
 
     setState(() {
@@ -65,7 +65,7 @@ class _LugaresPageState extends State<LugaresPage> {
       return;
     }
 
-    await DBService.instance.toggleFavorito(widget.usuario!["id"], lugarId);
+    await DBService.instance.toggleFavorito(widget.usuario!["id"], lugarId, tipo: 'lugar');
     await cargarDatos();
   }
 
@@ -120,6 +120,42 @@ class _LugaresPageState extends State<LugaresPage> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+
+                    // Botón de Favoritos (solo si hay usuario)
+                    if (usuario != null)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, "/favoritos", arguments: usuario);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.brown.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.brown.shade300),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.favorite, color: Colors.brown.shade700, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "Mis Favoritos",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.brown.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
                     const SizedBox(height: 25),
 
                     // --- Título sección ---

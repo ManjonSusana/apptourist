@@ -63,28 +63,27 @@ class MyApp extends StatelessWidget {
         },
 
         "/detalleRestaurante": (context) {
-  final args = ModalRoute.of(context)!.settings.arguments;
+          final args = ModalRoute.of(context)!.settings.arguments;
 
-  late Map<String, dynamic> restaurante;
-  Map<String, dynamic>? usuario;
+          late Map<String, dynamic> restaurante;
+          Map<String, dynamic>? usuario;
 
-  // ✅ PRIMERO revisar si viene con "restaurante" y "usuario"
-  if (args is Map && args.containsKey("restaurante")) {
-    restaurante = args["restaurante"] as Map<String, dynamic>;
-    usuario = args["usuario"] as Map<String, dynamic>?;
-  }
-  // Caso alternativo (muy raro)
-  else if (args is Map<String, dynamic>) {
-    restaurante = args;
-  } else {
-    throw Exception("Argumentos inválidos para detalleRestaurante");
-  }
+          if (args is Map && args.containsKey("restaurante")) {
+            restaurante = args["restaurante"] as Map<String, dynamic>;
+            usuario = args["usuario"] as Map<String, dynamic>?;
+          }
+          // Caso alternativo (muy raro)
+          else if (args is Map<String, dynamic>) {
+            restaurante = args;
+          } else {
+            throw Exception("Argumentos inválidos para detalleRestaurante");
+          }
 
-  return DetalleRestaurantePage(
-    restaurante: restaurante,
-    usuario: usuario,
-  );
-},
+          return DetalleRestaurantePage(
+            restaurante: restaurante,
+            usuario: usuario,
+          );
+        },
 
 
         "/detalleBar": (context) {
