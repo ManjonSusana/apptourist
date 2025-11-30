@@ -21,7 +21,7 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 36, // <<<<< NUEVA VERSION
+      version: 37, // Incrementado para limpiar duplicados
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -611,65 +611,9 @@ class DBService {
       "latitud": -19.038410,
       "longitud": -65.255881,
     });
-  // ==================== RESTAURANTES ====================
 
-// ==================== CAROS ====================
-
-await db.insert("restaurantes", {
-  "nombre": "La Taverne",
-  "descripcion": "Restaurante gourmet de alta cocina francesa, ubicado en la zona central.",
-  "direccion": "Calle Grau 680, Sucre",
-  "precio": "alto",
-  "imagenAsset": "assets/restaurantes/la_taverne.jpg",
-  "rating": 4.8,
-  "imagenes": jsonEncode([
-    "assets/restaurantes/la_taverne1.jpg",
-    "assets/restaurantes/la_taverne2.jpg",
-    "assets/restaurantes/la_taverne3.jpg",
-    "assets/restaurantes/la_taverne4.jpg"
-  ]),
-  "horario": "12:00 - 23:00",
-  "latitud": -19.048627,
-  "longitud": -65.261964
-});
-
-await db.insert("restaurantes", {
-  "nombre": "El Huerto",
-  "descripcion": "Comida internacional con un ambiente elegante y jardines amplios.",
-  "direccion": "Av. Hernando Siles 50",
-  "precio": "alto",
-  "imagenAsset": "assets/restaurantes/el_huerto.jpg",
-  "rating": 4.7,
-  "imagenes": jsonEncode([
-    "assets/restaurantes/el_huerto1.jpg",
-    "assets/restaurantes/el_huerto2.jpg",
-    "assets/restaurantes/el_huerto3.jpg",
-    "assets/restaurantes/el_huerto4.jpg"
-  ]),
-  "horario": "12:00 - 22:00",
-  "latitud": -19.044821,
-  "longitud": -65.255993
-});
-
-await db.insert("restaurantes", {
-  "nombre": "La Posada del Sol",
-  "descripcion": "Cocina tradicional y gourmet en una casona colonial restaurada.",
-  "direccion": "Calle España 123",
-  "precio": "alto",
-  "imagenAsset": "assets/restaurantes/posada_sol.jpg",
-  "rating": 4.6,
-  "imagenes": jsonEncode([
-    "assets/restaurantes/posada_sol1.jpg",
-    "assets/restaurantes/posada_sol2.jpg",
-    "assets/restaurantes/posada_sol3.jpg",
-    "assets/restaurantes/posada_sol4.jpg"
-  ]),
-  "horario": "12:00 - 23:00",
-  "latitud": -19.050512,
-  "longitud": -65.259231
-});
-
-await db.insert("restaurantes", {
+// ===================== BARES CAROS =====================
+await db.insert("bares", {
   "nombre": "GastroBar El Mercado",
   "descripcion": "Fusión gourmet con ingredientes frescos y carta de vinos premium.",
   "direccion": "Mercado Central, 2do nivel",

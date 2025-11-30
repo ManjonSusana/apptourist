@@ -30,9 +30,13 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
   void initState() {
     super.initState();
 
-    imagenes = widget.bar["imagenes"] != null
-        ? jsonDecode(widget.bar["imagenes"])
-        : [];
+    try {
+      imagenes = widget.bar["imagenes"] != null
+          ? jsonDecode(widget.bar["imagenes"])
+          : [];
+    } catch (e) {
+      imagenes = [];
+    }
 
     cargarComentarios();
   }
@@ -61,8 +65,9 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
   }
 
   Future<void> _abrirComoLlegar() async {
-    final q = Uri.encodeComponent(
-        "${widget.bar["nombre"]}, ${widget.bar["direccion"]}, Sucre Bolivia");
+    final nombre = widget.bar["nombre"] ?? "Bar";
+    final direccion = widget.bar["direccion"] ?? "Sucre";
+    final q = Uri.encodeComponent("$nombre, $direccion, Sucre Bolivia");
 
     final uri =
         Uri.parse("https://www.google.com/maps/search/?api=1&query=$q");
@@ -81,86 +86,25 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
     final r = widget.bar;
 
     return Scaffold(
-      
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Bares',
+          style: GoogleFonts.poppins(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
+      ),
+      drawer: _menuDrawer(),
       backgroundColor: Colors.white,
-        drawer: Drawer(
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.horizontal(right: Radius.circular(25)),
-    ),
-    child: ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        DrawerHeader(
-          decoration: BoxDecoration(
-            color: Colors.purple.shade200,
-          ),
-          child: const Text(
-            'AppTurismo',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-        ),
-
-        ListTile(
-          leading: const Icon(Icons.place),
-          title: const Text("Lugares"),
-          onTap: () {
-            Navigator.pushNamed(context, "/lugares");
-          },
-        ),
-
-        ListTile(
-          leading: const Icon(Icons.restaurant),
-          title: const Text("Restaurantes"),
-          onTap: () {
-            Navigator.pushNamed(context, "/restaurantes");
-          },
-        ),
-
-        ListTile(
-          leading: const Icon(Icons.local_bar),
-          title: const Text("Bares"),
-          onTap: () {
-            Navigator.pushNamed(context, "/bares");
-          },
-        ),
-
-        ListTile(
-          leading: const Icon(Icons.event),
-          title: const Text("Fechas destacadas"),
-          onTap: () {
-            Navigator.pushNamed(context, "/fechas");
-          },
-        ),
-
-        ListTile(
-          leading: const Icon(Icons.recommend),
-          title: const Text("Recomendaciones"),
-          onTap: () {
-            Navigator.pushNamed(context, "/recomendaciones");
-          },
-        ),
-
-        const Divider(),
-
-        ListTile(
-          leading: const Icon(Icons.person),
-          title: const Text("Perfil"),
-          onTap: () {
-            Navigator.pushNamed(context, "/perfil");
-          },
-        ),
-
-        ListTile(
-          leading: const Icon(Icons.logout),
-          title: const Text("Cerrar sesión"),
-          onTap: () {
-            Navigator.pushNamedAndRemoveUntil(
-                context, "/login", (_) => false);
-          },
-        ),
-      ],
-    ),
-  ),
 
       body: SafeArea(
         child: SingleChildScrollView(
@@ -168,50 +112,21 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "AppTurismo",
-                style: GoogleFonts.poppins(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 14),
-
+              // --- MENÚ HAMBURGUESA + BUSCADOR ---
               Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 24),
-                  ),
-                  const SizedBox(width: 10),
                   Builder(
                     builder: (context) {
-                      return GestureDetector(
-                        onTap: () => Scaffold.of(context).openDrawer(),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          child: const Icon(Icons.menu, size: 26),
-                        ),
+                      return IconButton(
+                        icon: const Icon(Icons.menu, size: 28),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                        padding: EdgeInsets.zero,
                       );
                     },
                   ),
-
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Container(
-                      height: 45,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          hintText: "Buscar...",
-                          border: InputBorder.none,
-                          prefixIcon: Icon(Icons.search),
-                        ),
-                      ),
-                    ),
+                    child: CustomSearchBar(),
                   ),
                 ],
               ),
@@ -219,7 +134,7 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
               const SizedBox(height: 22),
 
               Text(
-                r["nombre"],
+                r["nombre"] ?? "Sin nombre",
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -308,8 +223,8 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
               ...comentarios.map((c) {
                 return _comentarioItem(
                   usuario: c["usuarioNombre"] ?? "Anónimo",
-                  texto: c["texto"],
-                  fecha: c["fecha"],
+                  texto: c["texto"] ?? "",
+                  fecha: c["fecha"] ?? "",
                 );
               }),
 
@@ -364,6 +279,92 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
     );
   }
 
+  Drawer _menuDrawer() {
+    return Drawer(
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.horizontal(right: Radius.circular(25))),
+      child: Column(
+        children: [
+          Container(
+            height: 140,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.orange.shade400,
+                  Colors.pink.shade300,
+                ],
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(0),
+                bottomRight: Radius.circular(0),
+              ),
+            ),
+            child: Center(
+              child: Text(
+                "AppTourist",
+                style: GoogleFonts.poppins(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              children: [
+                _menuItem(Icons.place, "Lugares", () {
+                  Navigator.pushNamed(context, "/lugares");
+                }),
+                _menuItem(Icons.restaurant_menu, "Restaurantes", () {
+                  Navigator.pushNamed(context, "/restaurantes");
+                }),
+                _menuItem(Icons.local_bar, "Bares", () {
+                  Navigator.pushNamed(context, "/bares");
+                }),
+                _menuItem(Icons.event, "Actividades", () {
+                  Navigator.pushNamed(context, "/fechas");
+                }),
+                _menuItem(Icons.recommend, "Recomendaciones", () {
+                  Navigator.pushNamed(context, "/recomendaciones");
+                }),
+                const Divider(height: 20, thickness: 1),
+                _menuItem(Icons.person, "Perfil", () {
+                  Navigator.pushNamed(context, "/perfil");
+                }),
+                _menuItem(Icons.logout, "Cerrar sesión", () {
+                  Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
+                }, color: Colors.red),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _menuItem(IconData icon, String title, VoidCallback onTap, {Color? color}) {
+    return ListTile(
+      leading: Icon(icon, color: color ?? Colors.orange.shade700, size: 24),
+      title: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: color ?? Colors.black87,
+        ),
+      ),
+      onTap: onTap,
+      dense: true,
+      visualDensity: const VisualDensity(vertical: -2),
+    );
+  }
+
   Widget _carruselImagenes() {
     if (imagenes.isEmpty) {
       return Container(
@@ -381,11 +382,26 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
             controller: _pageCtrl,
             itemCount: imagenes.length,
             itemBuilder: (_, i) {
+              final imagePath = imagenes[i]?.toString() ?? "";
+              if (imagePath.isEmpty) {
+                return Container(
+                  color: Colors.grey[300],
+                  child: const Center(child: Text("Sin imagen")),
+                );
+              }
               return ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Image.asset(
-                  imagenes[i],
+                  imagePath,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[300],
+                      child: const Center(
+                        child: Icon(Icons.broken_image, size: 50),
+                      ),
+                    );
+                  },
                 ),
               );
             },
@@ -458,6 +474,273 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// =====================================================================
+//                        CUSTOM SEARCH BAR
+// =====================================================================
+class CustomSearchBar extends StatefulWidget {
+  const CustomSearchBar({super.key});
+
+  @override
+  State<CustomSearchBar> createState() => _CustomSearchBarState();
+}
+
+class _CustomSearchBarState extends State<CustomSearchBar> {
+  final _ctrl = TextEditingController();
+
+  void _mostrarFiltros() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Selecciona una categoría',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              _opcionCategoria(
+                'Actividades',
+                Icons.event,
+                const Color(0xFFD0C2FF),
+                '/fechas',
+              ),
+              _opcionCategoria(
+                'Lugares',
+                Icons.place,
+                const Color(0xFFFFC8C8),
+                '/lugares',
+              ),
+              _opcionCategoria(
+                'Restaurantes',
+                Icons.restaurant,
+                const Color(0xFFC7F3D0),
+                '/restaurantes',
+              ),
+              _opcionCategoria(
+                'Bares',
+                Icons.local_bar,
+                const Color(0xFFFFE9A8),
+                '/bares',
+              ),
+              
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _opcionCategoria(
+    String titulo,
+    IconData icono,
+    Color color,
+    String ruta,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.pushNamed(context, ruta);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icono,
+              color: Colors.black87,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                titulo,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey[600],
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _realizarBusqueda(String query) {
+    if (query.trim().isEmpty) return;
+    
+    final queryLower = query.toLowerCase().trim();
+    
+    if (queryLower.contains('restaurante') || 
+        queryLower.contains('comida') || 
+        queryLower.contains('comer')) {
+      Navigator.pushNamed(context, '/restaurantes');
+    } else if (queryLower.contains('bar') || 
+               queryLower.contains('bares') || 
+               queryLower.contains('cerveza') || 
+               queryLower.contains('trago')) {
+      Navigator.pushNamed(context, '/bares');
+    } else if (queryLower.contains('actividad') || 
+               queryLower.contains('fecha') || 
+               queryLower.contains('evento') || 
+               queryLower.contains('destacada')) {
+      Navigator.pushNamed(context, '/fechas');
+    } else if (queryLower.contains('lugar') || 
+               queryLower.contains('sitio') || 
+               queryLower.contains('visitar')) {
+      Navigator.pushNamed(context, '/lugares');
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+            '¿Dónde quieres buscar?',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'No se detectó una categoría específica. Selecciona dónde buscar:',
+                style: GoogleFonts.poppins(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              _dialogButton('Lugares', Icons.place, () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/lugares');
+              }),
+              _dialogButton('Restaurantes', Icons.restaurant, () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/restaurantes');
+              }),
+              _dialogButton('Bares', Icons.local_bar, () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/bares');
+              }),
+              _dialogButton('Actividades', Icons.event, () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/fechas');
+              }),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _dialogButton(String texto, IconData icono, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Icon(icono, size: 20, color: Colors.black87),
+            const SizedBox(width: 8),
+            Text(
+              texto,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 45,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4.0),
+            child: Icon(Icons.search, size: 22, color: Colors.grey),
+          ),
+          Expanded(
+            child: TextField(
+              controller: _ctrl,
+              decoration: const InputDecoration(
+                hintText: 'Buscar...',
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(vertical: 12),
+              ),
+              textInputAction: TextInputAction.search,
+              onSubmitted: _realizarBusqueda,
+            ),
+          ),
+          AnimatedBuilder(
+            animation: _ctrl,
+            builder: (context, _) {
+              final hasText = _ctrl.text.isNotEmpty;
+              return Row(
+                children: [
+                  if (hasText)
+                    IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () => setState(() => _ctrl.clear()),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.tune, size: 18),
+                    onPressed: _mostrarFiltros,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              );
+            },
+          )
         ],
       ),
     );
