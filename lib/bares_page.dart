@@ -64,6 +64,23 @@ class _BaresPageState extends State<BaresPage> {
     final usuario = widget.usuario;
 
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Bares',
+          style: GoogleFonts.poppins(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
+      ),
       drawer: Drawer(
   shape: const RoundedRectangleBorder(
     borderRadius: BorderRadius.horizontal(right: Radius.circular(25)),
@@ -141,7 +158,6 @@ class _BaresPageState extends State<BaresPage> {
     ],
   ),
 ),
-
       backgroundColor: Colors.white,
       body: SafeArea(
         child: cargando
@@ -151,37 +167,19 @@ class _BaresPageState extends State<BaresPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "AppTurismo",
-                      style: GoogleFonts.poppins(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
+                    // --- MENÚ HAMBURGUESA + BUSCADOR ---
                     Row(
                       children: [
-                        // Flecha atrás
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 24),
-                  ),
-                  const SizedBox(width: 10),
                         Builder(
                           builder: (context) {
-                            return GestureDetector(
-                              onTap: () => Scaffold.of(context).openDrawer(),
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                child: const Icon(Icons.menu, size: 28),
-                              ),
+                            return IconButton(
+                              icon: const Icon(Icons.menu, size: 28),
+                              onPressed: () => Scaffold.of(context).openDrawer(),
+                              padding: EdgeInsets.zero,
                             );
                           },
                         ),
-
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Container(
                             height: 45,
@@ -195,21 +193,6 @@ class _BaresPageState extends State<BaresPage> {
                                 hintText: "Buscar...",
                                 prefixIcon: Icon(Icons.search),
                               ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.purple.shade300,
-                          child: Text(
-                            usuario == null
-                                ? "?"
-                                : usuario["nombre"][0].toUpperCase(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontSize: 20,
                             ),
                           ),
                         ),

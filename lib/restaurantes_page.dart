@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'db_service.dart';
-import 'detalle_restaurante_page.dart';
 
 class RestaurantesPage extends StatefulWidget {
   final Map<String, dynamic>? usuario;
@@ -31,10 +30,10 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
 
     final lista = await db.obtenerRestaurantes();
 
-    // ⭐ Agregamos rating si no existe (porque tu tabla no lo tiene)
+    // ⭐ Agregamos rating si no existe
     for (var r in lista) {
       if (r["rating"] == null) {
-        r["rating"] = 3.5 + (r["id"] % 3); // bonito y consistente
+        r["rating"] = 3.5 + (r["id"] % 3);
       }
     }
 
@@ -61,95 +60,40 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
       return;
     }
 
-    await DBService.instance
-        .toggleFavorito(widget.usuario!["id"], restauranteId);
+    await DBService.instance.toggleFavorito(
+      widget.usuario!["id"],
+      restauranteId,
+    );
 
     await cargarDatos();
   }
 
+  // ============================================================
+  // INTERFAZ
+  // ============================================================
   @override
   Widget build(BuildContext context) {
     final usuario = widget.usuario;
 
     return Scaffold(
-      drawer: Drawer(
-  shape: const RoundedRectangleBorder(
-    borderRadius: BorderRadius.horizontal(right: Radius.circular(25)),
-  ),
-  child: ListView(
-    padding: EdgeInsets.zero,
-    children: [
-      DrawerHeader(
-        decoration: BoxDecoration(
-          color: Colors.purple.shade200,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
-        child: const Text(
-          'AppTurismo',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        title: Text(
+          'Restaurantes',
+          style: GoogleFonts.poppins(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
         ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
       ),
-
-      ListTile(
-        leading: const Icon(Icons.place),
-        title: const Text("Lugares"),
-        onTap: () {
-          Navigator.pushNamed(context, "/lugares", arguments: usuario);
-        },
-      ),
-
-      ListTile(
-        leading: const Icon(Icons.restaurant_menu),
-        title: const Text("Restaurantes"),
-        onTap: () {
-          Navigator.pushNamed(context, "/restaurantes", arguments: usuario);
-        },
-      ),
-
-      ListTile(
-        leading: const Icon(Icons.local_bar),
-        title: const Text("Bares"),
-        onTap: () {
-          Navigator.pushNamed(context, "/bares", arguments: usuario);
-        },
-      ),
-
-      ListTile(
-        leading: const Icon(Icons.event),
-        title: const Text("Fechas destacadas"),
-        onTap: () {
-          Navigator.pushNamed(context, "/fechas", arguments: usuario);
-        },
-      ),
-
-      ListTile(
-        leading: const Icon(Icons.recommend),
-        title: const Text("Recomendaciones"),
-        onTap: () {
-          Navigator.pushNamed(context, "/recomendaciones", arguments: usuario);
-        },
-      ),
-
-      const Divider(),
-
-      ListTile(
-        leading: const Icon(Icons.person),
-        title: const Text("Perfil"),
-        onTap: () {
-          Navigator.pushNamed(context, "/perfil", arguments: usuario);
-        },
-      ),
-
-      ListTile(
-        leading: const Icon(Icons.logout),
-        title: const Text("Cerrar sesión"),
-        onTap: () {
-          Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
-        },
-      ),
-    ],
-  ),
-),
-
+      drawer: _menuDrawer(usuario),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: cargando
@@ -159,47 +103,25 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ================= TÍTULO =================
-                    Text(
-                      "AppTurismo",
-                      style: GoogleFonts.poppins(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ========= MENÚ + BUSCADOR + PERFIL =========
+                    // --- MENÚ HAMBURGUESA + BUSCADOR ---
                     Row(
                       children: [
-                        // Flecha atrás
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 24),
-                  ),
-                  const SizedBox(width: 10),
-                        // Menú
                         Builder(
                           builder: (context) {
-                            return GestureDetector(
-                              onTap: () => Scaffold.of(context).openDrawer(),
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                child: const Icon(Icons.menu, size: 28),
-                              ),
+                            return IconButton(
+                              icon: const Icon(Icons.menu, size: 28),
+                              onPressed: () => Scaffold.of(context).openDrawer(),
+                              padding: EdgeInsets.zero,
                             );
                           },
                         ),
-                        const SizedBox(width: 12),
-
-                        // Buscador
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Container(
                             height: 45,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
                               color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             child: const TextField(
                               decoration: InputDecoration(
@@ -210,30 +132,12 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
                             ),
                           ),
                         ),
-
-                        const SizedBox(width: 12),
-
-                        // Perfil usuario
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.purple.shade300,
-                          child: Text(
-                            usuario == null
-                                ? "?"
-                                : usuario["nombre"][0].toUpperCase(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontSize: 20,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
 
                     const SizedBox(height: 25),
 
-                    // ========= TÍTULO DE PÁGINA =========
+                    // ------------ Título de la pantalla ------------
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -259,61 +163,134 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
 
                     const SizedBox(height: 25),
 
-                    // ====================================================
+                    // =====================================================
                     // RESTAURANTES CAROS
-                    // ====================================================
-                    Text(
-                      "RESTAURANTES CAROS",
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
+                    // =====================================================
+                    _tituloSeccion("RESTAURANTES CAROS"),
                     _listaHorizontal(
                       restaurantes.where((r) => r["precio"] == "alto").toList(),
                     ),
 
                     const SizedBox(height: 25),
 
-                    // ====================================================
+                    // =====================================================
                     // RESTAURANTES ECONÓMICOS
-                    // ====================================================
-                    Text(
-                      "RESTAURANTES ECONÓMICOS",
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
+                    // =====================================================
+                    _tituloSeccion("RESTAURANTES ECONÓMICOS"),
                     _listaHorizontal(
                       restaurantes.where((r) => r["precio"] == "bajo").toList(),
                     ),
 
                     const SizedBox(height: 25),
 
-                    // ====================================================
-                    // POPULARES
-                    // ====================================================
-                    Text(
-                      "POPULARES",
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
+                    // =====================================================
+                    // POPULARES (TODOS)
+                    // =====================================================
+                    _tituloSeccion("POPULARES"),
                     _listaHorizontal(restaurantes),
                   ],
                 ),
               ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // DRAWER MENU
+  // ============================================================
+  Drawer _menuDrawer(usuario) {
+    return Drawer(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(25)),
+      ),
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(color: Colors.purple.shade200),
+            child: const Text(
+              'AppTurismo',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.place),
+            title: const Text("Lugares"),
+            onTap: () => Navigator.pushNamed(
+              context,
+              "/lugares",
+              arguments: usuario,
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.restaurant_menu),
+            title: const Text("Restaurantes"),
+            onTap: () => Navigator.pushNamed(
+              context,
+              "/restaurantes",
+              arguments: usuario,
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.local_bar),
+            title: const Text("Bares"),
+            onTap: () => Navigator.pushNamed(
+              context,
+              "/bares",
+              arguments: usuario,
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.event),
+            title: const Text("Fechas destacadas"),
+            onTap: () => Navigator.pushNamed(
+              context,
+              "/fechas",
+              arguments: usuario,
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.recommend),
+            title: const Text("Recomendaciones"),
+            onTap: () => Navigator.pushNamed(
+              context,
+              "/recomendaciones",
+              arguments: usuario,
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text("Perfil"),
+            onTap: () => Navigator.pushNamed(
+              context,
+              "/perfil",
+              arguments: usuario,
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text("Cerrar sesión"),
+            onTap: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              "/login",
+              (_) => false,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // SECCIÓN TÍTULO
+  // ============================================================
+  Widget _tituloSeccion(String texto) {
+    return Text(
+      texto,
+      style: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
       ),
     );
   }
@@ -330,14 +307,13 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
           final esFav = favoritos.contains(r["id"]);
           return GestureDetector(
             onTap: () {
-              Navigator.push(
+              Navigator.pushNamed(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => DetalleRestaurantePage(
-                    restaurante: r,
-                    usuario: widget.usuario,
-                  ),
-                ),
+                "/detalleRestaurante",
+                arguments: {
+                  "restaurante": r,
+                  "usuario": widget.usuario,
+                },
               );
             },
             child: _restauranteCard(r, esFav),
@@ -348,7 +324,7 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
   }
 
   // ============================================================
-  // TARJETA DE RESTAURANTE
+  // TARJETA RESTAURANTE
   // ============================================================
   Widget _restauranteCard(Map<String, dynamic> r, bool esFav) {
     final rating = (r["rating"] as num?)?.toStringAsFixed(1) ?? "3.5";
@@ -357,13 +333,12 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
       width: 220,
       margin: const EdgeInsets.only(right: 18),
       decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.black12),
-        color: Colors.white,
       ),
       child: Column(
         children: [
-          // Imagen
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
             child: Stack(
@@ -389,8 +364,6 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
               ],
             ),
           ),
-
-          // Info
           Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
