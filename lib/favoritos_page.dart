@@ -147,8 +147,8 @@ class _FavoritosPageState extends State<FavoritosPage> {
                     },
                   ),
                   const SizedBox(width: 8),
-                  const Expanded(
-                    child: CustomSearchBar(),
+                  Expanded(
+                    child: CustomSearchBar(usuario: widget.usuario),
                   ),
                 ],
               ),
@@ -244,71 +244,103 @@ class _FavoritosPageState extends State<FavoritosPage> {
     required String img,
     required String tipo,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.black12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          // Imagen
-          ClipRRect(
-            borderRadius: const BorderRadius.horizontal(left: Radius.circular(18)),
-            child: Container(
-              width: 110,
-              height: 90,
-              color: Colors.grey.shade200,
-              child: Image.asset(
-                img,
-                fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: () {
+        // Obtener el item completo para navegar al detalle
+        final item = lugaresFav.firstWhere(
+          (l) => l["id"] == id && l["tipo"] == tipo,
+          orElse: () => {},
+        );
+        
+        if (item.isEmpty) return;
+        
+        // Navegar según el tipo
+        if (tipo == "lugar") {
+          Navigator.pushNamed(
+            context,
+            "/detalleLugar",
+            arguments: {"lugar": item, "usuario": widget.usuario},
+          );
+        } else if (tipo == "restaurante") {
+          Navigator.pushNamed(
+            context,
+            "/detalleRestaurante",
+            arguments: {"restaurante": item, "usuario": widget.usuario},
+          );
+        } else if (tipo == "bar") {
+          Navigator.pushNamed(
+            context,
+            "/detalleBar",
+            arguments: {"bar": item, "usuario": widget.usuario},
+          );
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.black12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            )
+          ],
+        ),
+        child: Row(
+          children: [
+            // Imagen
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(18)),
+              child: Container(
+                width: 110,
+                height: 90,
+                color: Colors.grey.shade200,
+                child: Image.asset(
+                  img,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-          ),
 
-          // Texto
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    nombre,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+            // Texto
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      nombre,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    direccion,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: Colors.grey[700],
+                    const SizedBox(height: 4),
+                    Text(
+                      direccion,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: Colors.grey[700],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // Corazón para quitar de favoritos
-          IconButton(
-            icon: const Icon(Icons.favorite, color: Colors.red),
-            onPressed: () => _toggleFavorito(id, tipo),
-          ),
+            // Corazón para quitar de favoritos
+            IconButton(
+              icon: const Icon(Icons.favorite, color: Colors.red),
+              onPressed: () => _toggleFavorito(id, tipo),
+            ),
 
-          const SizedBox(width: 8),
-        ],
+            const SizedBox(width: 8),
+          ],
+        ),
       ),
     );
   }
@@ -327,8 +359,8 @@ class _FavoritosPageState extends State<FavoritosPage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.orange.shade400,
-                  Colors.pink.shade300,
+                  Color(0xFFD7CCC8),
+                  Color(0xFFBCAAA4),
                 ],
               ),
               borderRadius: const BorderRadius.only(
@@ -368,8 +400,14 @@ class _FavoritosPageState extends State<FavoritosPage> {
                   Navigator.pushNamed(context, "/recomendaciones", arguments: usuario);
                 }),
                 const Divider(height: 20, thickness: 1),
-                _menuItem(Icons.person, "Perfil", () {
-                  Navigator.pushNamed(context, "/perfil", arguments: usuario);
+                _menuItem(Icons.person, "Perfil", () async {
+                  if (usuario != null) {
+                    await Navigator.pushNamed(context, "/perfil", arguments: usuario);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Debes iniciar sesión para ver tu perfil")),
+                    );
+                  }
                 }),
                 _menuItem(Icons.logout, "Cerrar sesión", () {
                   Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);

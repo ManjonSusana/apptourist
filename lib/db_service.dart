@@ -1246,7 +1246,7 @@ await db.insert("bares", {
     final database = await db;
 
     final res = await database.rawQuery("""
-      SELECT c.id, c.texto, c.fecha, u.nombre AS usuarioNombre
+      SELECT c.id, c.texto, c.fecha, c.usuarioId, u.nombre AS usuarioNombre, u.fotoPerfil AS usuarioFoto
       FROM comentarios c
       LEFT JOIN usuarios u ON u.id = c.usuarioId
       WHERE c.lugarId = ?
@@ -1260,7 +1260,7 @@ await db.insert("bares", {
     final database = await db;
 
     final res = await database.rawQuery("""
-      SELECT c.id, c.texto, c.fecha, u.nombre AS usuarioNombre
+      SELECT c.id, c.texto, c.fecha, c.usuarioId, u.nombre AS usuarioNombre, u.fotoPerfil AS usuarioFoto
       FROM comentarios c
       LEFT JOIN usuarios u ON u.id = c.usuarioId
       WHERE c.restauranteId = ?
@@ -1268,5 +1268,26 @@ await db.insert("bares", {
     """, [restauranteId]);
 
     return res;
+  }
+
+  // Editar comentario
+  Future<int> editarComentario(int comentarioId, String nuevoTexto) async {
+    final database = await db;
+    return await database.update(
+      "comentarios",
+      {"texto": nuevoTexto},
+      where: "id = ?",
+      whereArgs: [comentarioId],
+    );
+  }
+
+  // Eliminar comentario
+  Future<int> eliminarComentario(int comentarioId) async {
+    final database = await db;
+    return await database.delete(
+      "comentarios",
+      where: "id = ?",
+      whereArgs: [comentarioId],
+    );
   }
 }

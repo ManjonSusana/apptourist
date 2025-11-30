@@ -108,9 +108,26 @@ class MyApp extends StatelessWidget {
         },
 
         "/detalleLugar": (context) {
-          final lugar =
-              ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return DetalleLugarPage(lugar: lugar);
+          final args = ModalRoute.of(context)!.settings.arguments;
+
+          late Map<String, dynamic> lugar;
+          Map<String, dynamic>? usuario;
+
+          if (args is Map && args.containsKey("lugar")) {
+            lugar = args["lugar"] as Map<String, dynamic>;
+            usuario = args["usuario"] as Map<String, dynamic>?;
+          }
+          // Caso alternativo (compatibilidad hacia atrás)
+          else if (args is Map<String, dynamic>) {
+            lugar = args;
+          } else {
+            throw Exception("Argumentos inválidos para detalleLugar");
+          }
+
+          return DetalleLugarPage(
+            lugar: lugar,
+            usuario: usuario,
+          );
         },
 
         "/favoritos": (context) {

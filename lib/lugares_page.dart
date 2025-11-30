@@ -116,7 +116,7 @@ class _LugaresPageState extends State<LugaresPage> {
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: CustomSearchBar(onSearch: filtrarLugares),
+                          child: CustomSearchBar(onSearch: filtrarLugares, usuario: widget.usuario),
                         ),
                       ],
                     ),
@@ -190,8 +190,8 @@ class _LugaresPageState extends State<LugaresPage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.orange.shade400,
-                  Colors.pink.shade300,
+                  Color(0xFFD7CCC8),
+                  Color(0xFFBCAAA4),
                 ],
               ),
               borderRadius: const BorderRadius.only(
@@ -278,7 +278,7 @@ class _LugaresPageState extends State<LugaresPage> {
             return GestureDetector(
               onTap: () => Navigator.pushNamed(
                   context, "/detalleLugar",
-                  arguments: lugar),
+                  arguments: {"lugar": lugar, "usuario": widget.usuario}),
               child: _lugarCard(lugar, esFav),
             );
           }).toList()),
@@ -361,8 +361,9 @@ class _LugaresPageState extends State<LugaresPage> {
 // =============================================================
 class CustomSearchBar extends StatefulWidget {
   final Function(String)? onSearch;
+  final Map<String, dynamic>? usuario;
   
-  const CustomSearchBar({super.key, this.onSearch});
+  const CustomSearchBar({super.key, this.onSearch, this.usuario});
 
   @override
   State<CustomSearchBar> createState() => _CustomSearchBarState();
@@ -442,7 +443,7 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
     return GestureDetector(
       onTap: () {
         Navigator.pop(context);
-        Navigator.pushNamed(context, ruta);
+        Navigator.pushNamed(context, ruta, arguments: widget.usuario);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -492,21 +493,21 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
     if (queryLower.contains('restaurante') || 
         queryLower.contains('comida') || 
         queryLower.contains('comer')) {
-      Navigator.pushNamed(context, '/restaurantes');
+      Navigator.pushNamed(context, '/restaurantes', arguments: widget.usuario);
     } else if (queryLower.contains('bar') || 
                queryLower.contains('bares') || 
                queryLower.contains('cerveza') || 
                queryLower.contains('trago')) {
-      Navigator.pushNamed(context, '/bares');
+      Navigator.pushNamed(context, '/bares', arguments: widget.usuario);
     } else if (queryLower.contains('actividad') || 
                queryLower.contains('fecha') || 
                queryLower.contains('evento') || 
                queryLower.contains('destacada')) {
-      Navigator.pushNamed(context, '/fechas');
+      Navigator.pushNamed(context, '/fechas', arguments: widget.usuario);
     } else if (queryLower.contains('lugar') || 
                queryLower.contains('sitio') || 
                queryLower.contains('visitar')) {
-      Navigator.pushNamed(context, '/lugares');
+      Navigator.pushNamed(context, '/lugares', arguments: widget.usuario);
     } else {
       showDialog(
         context: context,
@@ -525,19 +526,19 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
               const SizedBox(height: 16),
               _dialogButton('Lugares', Icons.place, () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/lugares');
+                Navigator.pushNamed(context, '/lugares', arguments: widget.usuario);
               }),
               _dialogButton('Restaurantes', Icons.restaurant, () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/restaurantes');
+                Navigator.pushNamed(context, '/restaurantes', arguments: widget.usuario);
               }),
               _dialogButton('Bares', Icons.local_bar, () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/bares');
+                Navigator.pushNamed(context, '/bares', arguments: widget.usuario);
               }),
               _dialogButton('Actividades', Icons.event, () {
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/fechas');
+                Navigator.pushNamed(context, '/fechas', arguments: widget.usuario);
               }),
             ],
           ),

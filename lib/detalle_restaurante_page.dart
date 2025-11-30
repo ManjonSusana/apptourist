@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'db_service.dart';
@@ -55,8 +57,16 @@ class _DetalleRestaurantePageState extends State<DetalleRestaurantePage> {
     final texto = comentarioCtrl.text.trim();
     if (texto.isEmpty) return;
 
+    // Verificar que el usuario esté logueado
+    if (widget.usuario == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Debes iniciar sesión para comentar")),
+      );
+      return;
+    }
+
     await DBService.instance.insertarComentario(
-      usuarioId: widget.usuario?["id"],
+      usuarioId: widget.usuario!["id"],
       restauranteId: widget.restaurante["id"],
       texto: texto,
     );
@@ -65,19 +75,126 @@ class _DetalleRestaurantePageState extends State<DetalleRestaurantePage> {
     await cargarComentarios();
   }
 
+  // Editar comentario
+  Future<void> _editarComentario(int comentarioId, String textoActual) async {
+    final TextEditingController editController = TextEditingController(text: textoActual);
+    
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Editar comentario', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: TextField(
+          controller: editController,
+          maxLines: 3,
+          decoration: InputDecoration(
+            hintText: 'Escribe tu comentario...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar', style: GoogleFonts.poppins()),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final nuevoTexto = editController.text.trim();
+              if (nuevoTexto.isNotEmpty) {
+                await DBService.instance.editarComentario(comentarioId, nuevoTexto);
+                await cargarComentarios();
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Comentario actualizado', style: GoogleFonts.poppins()),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+            child: Text('Guardar', style: GoogleFonts.poppins(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Eliminar comentario
+  Future<void> _eliminarComentario(int comentarioId) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Eliminar comentario', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text(
+          '¿Estás seguro de que deseas eliminar este comentario?',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancelar', style: GoogleFonts.poppins()),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('Eliminar', style: GoogleFonts.poppins(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true) {
+      await DBService.instance.eliminarComentario(comentarioId);
+      await cargarComentarios();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Comentario eliminado', style: GoogleFonts.poppins()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   // ================= GOOGLE MAPS =================
   Future<void> _abrirComoLlegar() async {
-    final nombre = widget.restaurante["nombre"] ?? "Restaurante";
-    final direccion = widget.restaurante["direccion"] ?? "Sucre";
-    final q = Uri.encodeComponent("$nombre, $direccion, Sucre Bolivia");
-
-    final uri = Uri.parse("https://www.google.com/maps/search/?api=1&query=$q");
-
     try {
+      // Verificar permisos de ubicación
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Permisos de ubicación denegados")),
+          );
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Permisos de ubicación denegados permanentemente")),
+        );
+        return;
+      }
+
+      // Obtener ubicación actual
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final nombre = widget.restaurante["nombre"] ?? "Restaurante";
+      final direccion = widget.restaurante["direccion"] ?? "Sucre";
+      final destino = Uri.encodeComponent("$nombre, $direccion, Sucre Bolivia");
+
+      // URL con direcciones desde ubicación actual hasta el destino
+      final uri = Uri.parse(
+        "https://www.google.com/maps/dir/?api=1&origin=${position.latitude},${position.longitude}&destination=$destino&travelmode=driving"
+      );
+
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No se pudo abrir Google Maps")),
+        SnackBar(content: Text("Error al obtener ubicación: $e")),
       );
     }
   }
@@ -215,7 +332,10 @@ class _DetalleRestaurantePageState extends State<DetalleRestaurantePage> {
 
               ...comentarios.map((c) {
                 return _comentarioItem(
+                  comentarioId: c["id"],
+                  usuarioId: c["usuarioId"],
                   usuario: c["usuarioNombre"] ?? "Anónimo",
+                  fotoPerfil: c["usuarioFoto"],
                   texto: c["texto"] ?? "",
                   fecha: c["fecha"] ?? "",
                 );
@@ -287,8 +407,8 @@ class _DetalleRestaurantePageState extends State<DetalleRestaurantePage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.orange.shade400,
-                  Colors.pink.shade300,
+                  Color(0xFFD7CCC8),
+                  Color(0xFFBCAAA4),
                 ],
               ),
               borderRadius: const BorderRadius.only(
@@ -425,10 +545,17 @@ class _DetalleRestaurantePageState extends State<DetalleRestaurantePage> {
 
   // ================= ITEM COMENTARIO =================
   Widget _comentarioItem({
+    required int comentarioId,
+    int? usuarioId,
     required String usuario,
+    String? fotoPerfil,
     required String texto,
     required String fecha,
   }) {
+    final bool esComentarioPropio = widget.usuario != null && 
+                                     usuarioId != null && 
+                                     widget.usuario!["id"] == usuarioId;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -440,25 +567,60 @@ class _DetalleRestaurantePageState extends State<DetalleRestaurantePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            radius: 14,
+            radius: 20,
             backgroundColor: Colors.deepPurpleAccent,
-            child: Text(
-              usuario[0].toUpperCase(),
-              style: const TextStyle(color: Colors.white),
-            ),
+            backgroundImage: fotoPerfil != null && fotoPerfil.isNotEmpty
+                ? FileImage(File(fotoPerfil))
+                : null,
+            child: fotoPerfil == null || fotoPerfil.isEmpty
+                ? Text(
+                    usuario[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  usuario,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        usuario,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (esComentarioPropio)
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
+                            onPressed: () => _editarComentario(comentarioId, texto),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                            onPressed: () => _eliminarComentario(comentarioId),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
+                const SizedBox(height: 4),
                 Text(
                   texto,
                   style: GoogleFonts.poppins(

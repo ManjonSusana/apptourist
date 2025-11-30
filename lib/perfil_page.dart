@@ -93,6 +93,14 @@ class _PerfilPageState extends State<PerfilPage> {
         setState(() {
           _editando = false;
           _guardando = false;
+          if (usuarioActualizado != null) {
+            _fotoPerfil = usuarioActualizado["fotoPerfil"] ?? _fotoPerfil;
+            _telefonoController.text = usuarioActualizado["telefono"] ?? _telefonoController.text;
+            _bioController.text = usuarioActualizado["bio"] ?? _bioController.text;
+            _lugaresPreferidos = usuarioActualizado["lugaresPreferidos"] ?? _lugaresPreferidos;
+            _restaurantesPreferidos = usuarioActualizado["restaurantesPreferidos"] ?? _restaurantesPreferidos;
+            _ambiente = usuarioActualizado["ambiente"] ?? _ambiente;
+          }
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
