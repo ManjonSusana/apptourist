@@ -1633,4 +1633,23 @@ await db.insert("bares", {
       orderBy: "fechaHoraInicio ASC", // Ordena por hora para la agenda
     );
   }
+
+  // Obtiene un lugar por su ID
+// Obtiene un lugar por su ID
+Future<Map<String, dynamic>?> obtenerLugarPorId(int id) async {
+  final database = await db;  // ✅ usamos el getter `db`
+
+  final res = await database.query(
+    'lugares',          // tu tabla de lugares
+    where: 'id = ?',
+    whereArgs: [id],
+    limit: 1,
+  );
+
+  if (res.isNotEmpty) {
+    return res.first;
+  }
+  return null;
+}
+
 }
