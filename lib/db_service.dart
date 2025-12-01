@@ -19,6 +19,7 @@ class DBService {
     final dir = await getApplicationDocumentsDirectory();
     final path = join(dir.path, "turismo_app.db");
 
+    // Incrementamos la versión para forzar la ejecución de _onUpgrade y _onCreate
     return await openDatabase(
       path,
       version: 41, // <<<<< NUEVA VERSION
@@ -123,21 +124,35 @@ class DBService {
       );
     ''');
 
-    // Tabla fechas destacadas
-await db.execute('''
-  CREATE TABLE fechas_destacadas(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    titulo TEXT NOT NULL,
-    descripcion TEXT,
-    icono TEXT,
-    categoria TEXT,
-    fechaInicio TEXT,   -- guardaremos fecha como ISO8601 (String)
-    fechaFin TEXT,      -- opcional, puede ser null
-    permanente INTEGER DEFAULT 0,  -- 0 = no, 1 = sí
-    imagenAsset TEXT
-  );
-''');
-
+    // Tabla fechas destacadas (Hitos/Temas)
+    await db.execute('''
+      CREATE TABLE fechas_destacadas(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        titulo TEXT NOT NULL,
+        descripcion TEXT,
+        icono TEXT,
+        categoria TEXT,
+        fechaInicio TEXT,   -- guardaremos fecha como ISO8601 (String)
+        fechaFin TEXT,      -- opcional, puede ser null
+        permanente INTEGER DEFAULT 0,  -- 0 = no, 1 = sí
+        imagenAsset TEXT
+      );
+    ''');
+    
+    // ===================================================
+    // NUEVA TABLA: Eventos Relacionados (Actividades)
+    // ===================================================
+    await db.execute('''
+      CREATE TABLE eventos_relacionados(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        hitoId INTEGER NOT NULL,
+        titulo TEXT NOT NULL,
+        descripcion TEXT,
+        ubicacion TEXT,
+        fechaHoraInicio TEXT, -- fecha y hora de la actividad
+        FOREIGN KEY (hitoId) REFERENCES fechas_destacadas(id)
+      );
+    ''');
 
 
     await _insertarDatosIniciales(db);
@@ -200,6 +215,8 @@ await db.execute('''
     if (lugaresCount == 0) {
       await _insertarDatosIniciales(db);
     }
+    // Aseguramos que se dropea la nueva tabla si existe
+    await db.execute("DROP TABLE IF EXISTS eventos_relacionados"); 
     await db.execute("DROP TABLE IF EXISTS comentarios");
     await db.execute("DROP TABLE IF EXISTS favoritos");
     await db.execute("DROP TABLE IF EXISTS bares");
@@ -215,6 +232,13 @@ await db.execute('''
   //               DATOS INICIALES
   // ====================================================
   Future _insertarDatosIniciales(Database db) async {
+    // ==================== USUARIOS (Ejemplo) ====================
+    await db.insert("usuarios", {
+      "nombre": "Admin User",
+      "correo": "admin@app.com",
+      "password": "password",
+    });
+
     // ==================== LUGARES CAROS ====================
     await db.insert("lugares", {
       "nombre": "Castillo de la Glorieta",
@@ -1076,54 +1100,276 @@ await db.insert("bares", {
   "longitud": -65.26110,
 });
 
-  // ==================== FECHAS DESTACADAS ====================
-await db.insert("fechas_destacadas", {
-  "titulo": "Día Internacional contra la Violencia a la Mujer",
-  "descripcion": "Actividades de concientización y marchas pacíficas en la Plaza 25 de Mayo.",
-  "icono": "🎗️",
-  "categoria": "Reinvindicativas y Sociales",
-  "fechaInicio": DateTime(2025, 11, 25).toIso8601String(),
-  "fechaFin": DateTime(2025, 11, 25).toIso8601String(),
-  "permanente": 0,
-  "imagenAsset": "assets/fechas/mujer_violencia.jpg",
-});
-
-await db.insert("fechas_destacadas", {
-  "titulo": "Festival de Danzas Folklóricas",
-  "descripcion": "Muestra de danzas típicas de Chuquisaca y otras regiones de Bolivia.",
-  "icono": "💃",
-  "categoria": "Musical y Danza",
-  "fechaInicio": DateTime(2025, 11, 28).toIso8601String(),
-  "fechaFin": DateTime(2025, 11, 28).toIso8601String(),
-  "permanente": 0,
-  "imagenAsset": "assets/fechas/danzas_festival.jpg",
-});
-
-await db.insert("fechas_destacadas", {
-  "titulo": "Feria Navideña de Artesanías",
-  "descripcion": "Mercado de artesanías y regalos en el Parque Bolívar.",
-  "icono": "🛍️",
-  "categoria": "Ferias, Mercados y Comercio",
-  "fechaInicio": DateTime(2025, 12, 5).toIso8601String(),
-  "fechaFin": DateTime(2025, 12, 24).toIso8601String(),
-  "permanente": 0,
-  "imagenAsset": "assets/fechas/feria_navidad.jpg",
-});
-
-await db.insert("fechas_destacadas", {
-  "titulo": "Mercado Central Gastronómico",
-  "descripcion": "Sabores típicos de Sucre durante todo el año.",
-  "icono": "🍲",
-  "categoria": "Ferias, Mercados y Comercio",
-  "fechaInicio": DateTime(2025, 1, 1).toIso8601String(),
-  "fechaFin": DateTime(2025, 12, 31).toIso8601String(),
-  "permanente": 1,
-  "imagenAsset": "assets/fechas/mercado.jpg",
-});
 
 
+  // ==================== INSERCIÓN DE HITOS (FECHAS DESTACADAS) ====================
+  
+  // ----------------------------------------------------
+  // CATEGORÍAS UNIFICADAS:
+  // 1. Festividades y Tradiciones
+  // 2. Arte y Cultura
+  // 3. Sociedad y Reivindicación
+  // 4. Gastronomía y Ferias
+  // ----------------------------------------------------
+
+  // ID 1: Festival de Danzas (Arte y Cultura - Debería estar en HOY o muy cerca)
+  final hito1Id = await db.insert("fechas_destacadas", {
+    "titulo": "Festival de Danzas Folklóricas",
+    "descripcion": "Muestra de danzas típicas de Chuquisaca y otras regiones de Bolivia, con énfasis en la cultura andina.",
+    "icono": "💃",
+    "categoria": "Arte y Cultura",
+    "fechaInicio": DateTime(2025, 11, 28).toIso8601String(),
+    "fechaFin": DateTime(2025, 12, 1).toIso8601String(), 
+    "permanente": 0,
+    "imagenAsset": "assets/fechas/danzas_festival.jpg",
+  });
+
+  // ID 2: Sociedad y Reivindicación (Pasado)
+  final hito2Id = await db.insert("fechas_destacadas", {
+    "titulo": "Día contra la Violencia a la Mujer",
+    "descripcion": "Actividades de concientización y marchas pacíficas en el centro de la ciudad.",
+    "icono": "🎗️",
+    "categoria": "Sociedad y Reivindicación",
+    "fechaInicio": DateTime(2025, 11, 25).toIso8601String(),
+    "fechaFin": DateTime(2025, 11, 25).toIso8601String(),
+    "permanente": 0,
+    "imagenAsset": "assets/fechas/mujer_violencia.jpg",
+  });
+  
+  // ID 3: Festividades y Tradiciones (Próximo)
+  final hito3Id = await db.insert("fechas_destacadas", {
+    "titulo": "Navidad y Pesebres Gigantes",
+    "descripcion": "Celebración de las fiestas de fin de año con pesebres y encuentros familiares. Duración: 20 al 31 de Dic.",
+    "icono": "🎄",
+    "categoria": "Festividades y Tradiciones",
+    "fechaInicio": DateTime(2025, 12, 20).toIso8601String(),
+    "fechaFin": DateTime(2025, 12, 31).toIso8601String(),
+    "permanente": 0,
+    "imagenAsset": "assets/fechas/feria_navidad.jpg",
+  });
+
+  // ID 4: Gastronomía y Ferias (Permanente)
+  final hito4Id = await db.insert("fechas_destacadas", {
+    "titulo": "Mercado Central Gastronómico",
+    "descripcion": "Sabores típicos de Sucre disponibles todo el año en el Mercado Central.",
+    "icono": "🍲",
+    "categoria": "Gastronomía y Ferias",
+    "fechaInicio": DateTime(2025, 1, 1).toIso8601String(),
+    "fechaFin": DateTime(2025, 12, 31).toIso8601String(),
+    "permanente": 1,
+    "imagenAsset": "assets/fechas/mercado.jpg",
+  });
+
+  // ID 5: Festividades y Tradiciones (Futuro - Mayo 2026)
+  final hito5Id = await db.insert("fechas_destacadas", {
+    "titulo": "Aniversario de Sucre y Desfile Cívico",
+    "descripcion": "Conmemoración de la Fundación de la Villa de La Plata con actos oficiales y desfiles.",
+    "icono": "🏛️",
+    "categoria": "Festividades y Tradiciones",
+    "fechaInicio": DateTime(2026, 5, 25).toIso8601String(),
+    "fechaFin": DateTime(2026, 5, 25).toIso8601String(),
+    "permanente": 0,
+    "imagenAsset": "assets/fechas/aniversario_sucre.jpg",
+  });
+
+  // ID 6: Arte y Cultura (Futuro - Junio 2026)
+  final hito6Id = await db.insert("fechas_destacadas", {
+    "titulo": "Festival Internacional de la Cultura (FIC)",
+    "descripcion": "Muestra de arte, cine, teatro y música con participación internacional. Dura 4 días.",
+    "icono": "🎨",
+    "categoria": "Arte y Cultura",
+    "fechaInicio": DateTime(2026, 6, 10).toIso8601String(),
+    "fechaFin": DateTime(2026, 6, 14).toIso8601String(),
+    "permanente": 0,
+    "imagenAsset": "assets/fechas/fic_festival.jpg",
+  });
+  
+  // ID 7: Festividades y Tradiciones (Futuro - Febrero 2026)
+  final hito7Id = await db.insert("fechas_destacadas", {
+    "titulo": "Carnaval de Sucre",
+    "descripcion": "La festividad más colorida y alegre del año, con corsos, entradas y guerra de globos.",
+    "icono": "🎭",
+    "categoria": "Festividades y Tradiciones",
+    "fechaInicio": DateTime(2026, 2, 10).toIso8601String(),
+    "fechaFin": DateTime(2026, 2, 18).toIso8601String(),
+    "permanente": 0,
+    "imagenAsset": "assets/fechas/carnaval.jpg",
+  });
+  
+  // ID 8: Festividades y Tradiciones (Futuro - Septiembre 2026)
+  final hito8Id = await db.insert("fechas_destacadas", {
+    "titulo": "Fiesta de la Virgen de Guadalupe",
+    "descripcion": "La principal festividad religiosa de Sucre con misas, procesiones y feria popular.",
+    "icono": "⛪",
+    "categoria": "Festividades y Tradiciones",
+    "fechaInicio": DateTime(2026, 9, 8).toIso8601String(),
+    "fechaFin": DateTime(2026, 9, 10).toIso8601String(),
+    "permanente": 0,
+    "imagenAsset": "assets/fechas/guadalupe.jpg",
+  });
+
+  // ====================================================
+  // DATOS ADICIONALES (Para poblar categorías)
+  // ====================================================
+
+  // ID 9: Gastronomía y Ferias (Próximo)
+  final hito9Id = await db.insert("fechas_destacadas", {
+    "titulo": "Feria de la Alasita Sucreña",
+    "descripcion": "Feria tradicional de miniaturas y deseos, enfocada en la abundancia.",
+    "icono": "🎁",
+    "categoria": "Gastronomía y Ferias",
+    "fechaInicio": DateTime(2026, 1, 24).toIso8601String(),
+    "fechaFin": DateTime(2026, 1, 31).toIso8601String(),
+    "permanente": 0,
+    "imagenAsset": "assets/fechas/alasita.jpg",
+  });
+  
+  // ID 10: Arte y Cultura (Futuro)
+  final hito10Id = await db.insert("fechas_destacadas", {
+    "titulo": "Encuentro Nacional de Poesía",
+    "descripcion": "Lecturas y talleres con poetas de todo el país y presentaciones públicas.",
+    "icono": "📚",
+    "categoria": "Arte y Cultura",
+    "fechaInicio": DateTime(2026, 4, 15).toIso8601String(),
+    "fechaFin": DateTime(2026, 4, 18).toIso8601String(),
+    "permanente": 0,
+    "imagenAsset": "assets/fechas/poesia.jpg",
+  });
+  
+  // ID 11: Sociedad y Reivindicación (Pasado)
+  final hito11Id = await db.insert("fechas_destacadas", {
+    "titulo": "Día del Peatón",
+    "descripcion": "Jornada sin coches, dedicada al deporte y actividades familiares en las avenidas principales.",
+    "icono": "🚴",
+    "categoria": "Sociedad y Reivindicación",
+    "fechaInicio": DateTime(2025, 9, 1).toIso8601String(),
+    "fechaFin": DateTime(2025, 9, 1).toIso8601String(),
+    "permanente": 0,
+    "imagenAsset": "assets/fechas/peaton.jpg",
+  });
+
+
+  // ====================================================
+  // NUEVOS DATOS: EVENTOS RELACIONADOS (ACTIVIDADES) - ENRIQUECIDOS
+  // ====================================================
+
+  // Eventos para HITO 1: Festival de Danzas Folklóricas (ID 1)
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito1Id,
+    "titulo": "Apertura y Desfile Inaugural",
+    "descripcion": "Presentación de delegaciones nacionales e internacionales con trajes de gala.",
+    "ubicacion": "Plaza 25 de Mayo (Frontis de la Catedral)",
+    "fechaHoraInicio": DateTime(2025, 11, 30, 17, 0).toIso8601String(),
+  });
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito1Id,
+    "titulo": "Gala de la Cueca Chuquisaqueña",
+    "descripcion": "Concurso y exhibición de la danza tradicional de Sucre.",
+    "ubicacion": "Teatro Gran Mariscal",
+    "fechaHoraInicio": DateTime(2025, 12, 1, 19, 30).toIso8601String(),
+  });
+  
+  // Eventos para HITO 3: Navidad y Pesebres Gigantes (ID 3)
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito3Id,
+    "titulo": "Inauguración de Pesebre Gigante",
+    "descripcion": "Encendido de luces y apertura oficial del pesebre de la ciudad.",
+    "ubicacion": "Parque Infantil (Sector central)",
+    "fechaHoraInicio": DateTime(2025, 12, 20, 19, 0).toIso8601String(),
+  });
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito3Id,
+    "titulo": "Misa de Gallo y Nochebuena",
+    "descripcion": "Ceremonia religiosa principal de Nochebuena.",
+    "ubicacion": "Catedral Metropolitana",
+    "fechaHoraInicio": DateTime(2025, 12, 24, 22, 0).toIso8601String(),
+  });
+  
+  // Eventos para HITO 7: Carnaval de Sucre (ID 7)
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito7Id,
+    "titulo": "Elección y Coronación de la Reina del Carnaval",
+    "descripcion": "Evento de gala con presentación de candidatas y fiesta de apertura.",
+    "ubicacion": "Coliseo Universitario",
+    "fechaHoraInicio": DateTime(2026, 2, 10, 20, 0).toIso8601String(),
+  });
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito7Id,
+    "titulo": "Entrada Folklórica del Carnaval",
+    "descripcion": "El evento central con comparsas y disfraces tradicionales.",
+    "ubicacion": "Recorrido central (Av. Hernando Siles)",
+    "fechaHoraInicio": DateTime(2026, 2, 14, 14, 0).toIso8601String(),
+  });
+
+  // Eventos para HITO 8: Fiesta de Guadalupe (ID 8)
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito8Id,
+    "titulo": "Procesión y Desfile de Carros Alegóricos",
+    "descripcion": "La procesión más importante de la ciudad, un gran evento religioso.",
+    "ubicacion": "Catedral -> La Recoleta",
+    "fechaHoraInicio": DateTime(2026, 9, 8, 15, 0).toIso8601String(),
+  });
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito8Id,
+    "titulo": "Feria Popular de Comida y Música",
+    "descripcion": "Stands de comida tradicional, juegos y música en vivo.",
+    "ubicacion": "Zona del Estadio Patria",
+    "fechaHoraInicio": DateTime(2026, 9, 9, 10, 0).toIso8601String(),
+  });
+  
+  // Eventos para HITO 9: Feria de la Alasita Sucreña (ID 9)
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito9Id,
+    "titulo": "Inauguración de la Feria y Bendición",
+    "descripcion": "Apertura oficial de la feria con ritos de bendición a las miniaturas.",
+    "ubicacion": "Campo Ferial (Zona Max Toledo)",
+    "fechaHoraInicio": DateTime(2026, 1, 24, 11, 0).toIso8601String(),
+  });
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito9Id,
+    "titulo": "Venta de Platos Típicos a Miniatura",
+    "descripcion": "Platos tradicionales vendidos en tamaño miniatura para rituales de prosperidad.",
+    "ubicacion": "Sector Gastronómico",
+    "fechaHoraInicio": DateTime(2026, 1, 27, 12, 0).toIso8601String(),
+  });
+
+
+  // Eventos para HITO 10: Encuentro Nacional de Poesía (ID 10)
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito10Id,
+    "titulo": "Taller de Métrica y Verso Clásico",
+    "descripcion": "Taller dirigido a jóvenes escritores en el Centro Cultural.",
+    "ubicacion": "Centro Cultural Universitario",
+    "fechaHoraInicio": DateTime(2026, 4, 16, 15, 0).toIso8601String(),
+  });
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito10Id,
+    "titulo": "Recital Poético Central (Abierto al Público)",
+    "descripcion": "Lecturas centrales con poetas invitados de renombre.",
+    "ubicacion": "Casa de la Cultura",
+    "fechaHoraInicio": DateTime(2026, 4, 17, 19, 0).toIso8601String(),
+  });
+
+
+  // Eventos para HITO 4: Mercado Central Gastronómico (ID 4 - Ejemplo permanente)
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito4Id,
+    "titulo": "Día de la Picana Navideña (1 de Enero)",
+    "descripcion": "Promoción especial de Picana y platos de Año Nuevo.",
+    "ubicacion": "Mercado Central, Sección Comidas",
+    "fechaHoraInicio": DateTime(2026, 1, 1, 12, 0).toIso8601String(),
+  });
+  await db.insert("eventos_relacionados", {
+    "hitoId": hito4Id,
+    "titulo": "Taller de preparación de chorizos Chuquisaqueños",
+    "descripcion": "Aprende a preparar chorizos con expertos cocineros del mercado.",
+    "ubicacion": "Mercado Central, Piso 2 (Cocinas)",
+    "fechaHoraInicio": DateTime(2026, 1, 15, 10, 0).toIso8601String(),
+  });
+  
 
   }
+
 
   // ====================================================
   //                   USUARIOS
@@ -1364,13 +1610,27 @@ await db.insert("fechas_destacadas", {
     );
   }
   // ====================================================
-//               FECHAS DESTACADAS
-// ====================================================
-Future<List<Map<String, dynamic>>> obtenerFechasDestacadas() async {
-  final database = await db;
-  return await database.query(
-    "fechas_destacadas",
-    orderBy: "fechaInicio ASC",
-  );
-}
+  //               FECHAS DESTACADAS (HITOS)
+  // ====================================================
+  Future<List<Map<String, dynamic>>> obtenerFechasDestacadas() async {
+    final database = await db;
+    return await database.query(
+      "fechas_destacadas",
+      orderBy: "fechaInicio ASC",
+    );
+  }
+
+  // ====================================================
+  // FUNCIÓN: EVENTOS RELACIONADOS (ACTIVIDADES)
+  // ====================================================
+  Future<List<Map<String, dynamic>>> obtenerEventosPorHito(int hitoId) async {
+    final database = await db;
+    // Consulta los eventos en la nueva tabla 'eventos_relacionados' filtrando por hitoId
+    return await database.query(
+      "eventos_relacionados",
+      where: "hitoId = ?",
+      whereArgs: [hitoId],
+      orderBy: "fechaHoraInicio ASC", // Ordena por hora para la agenda
+    );
+  }
 }

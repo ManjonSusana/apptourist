@@ -15,6 +15,13 @@ import 'pages/recomendaciones_page.dart';
 import 'detalle_restaurante_page.dart';
 import 'detalle_bares_page.dart';
 
+// Importamos los modelos HitoDestacado y EventoRelacionado desde la página principal.
+// NOTA: ASUMIMOS QUE ESTE ES EL ARCHIVO FUENTE DE LOS MODELOS.
+import 'package:apptourist/pages/fechas_destacadas_page.dart'; 
+// Importamos la nueva página de detalle de evento
+import 'pages/detalle_evento_page.dart'; 
+
+
 void main() {
   runApp(const MyApp());
 }
@@ -175,13 +182,26 @@ class MyApp extends StatelessWidget {
             );
           },
         
+        // ------------- RUTA DE DETALLE DE HITO (AGENDA) -------------
         "/detalleFecha": (context) {
-  final evento = ModalRoute.of(context)!.settings.arguments as EventoDestacado;
-  return DetalleFechaPage(evento: evento);
-},
+          // CORRECCIÓN DE TIPO: Casqueo a HitoDestacado
+          final hito = ModalRoute.of(context)!.settings.arguments as HitoDestacado;
+          return DetalleFechaPage(evento: hito);
+        },
 
-      
-        
+        // ------------- NUEVA RUTA DE DETALLE DE EVENTO ESPECÍFICO -------------
+        "/detalleEvento": (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          
+          final evento = args['evento'] as EventoRelacionado;
+          final hitoPadre = args['hitoPadre'] as HitoDestacado;
+
+          return DetalleEventoPage(
+            evento: evento,
+            hitoPadre: hitoPadre,
+          );
+        },
+
       },
     );
   }

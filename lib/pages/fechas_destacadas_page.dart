@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../db_service.dart'; // ajusta esta ruta si tu db_service está en otra carpeta
 
-// Importación asumida, ajusta esta ruta si tu db_service está en otra carpeta
-import '../db_service.dart';
-
-// --- MODELO (Sin cambios sustanciales) ---
-
-class EventoDestacado {
+// --- MODELO 1: HitoDestacado (El tema o fecha importante) ---
+class HitoDestacado { 
   final int id;
   final String titulo;
   final String descripcion;
@@ -17,7 +14,7 @@ class EventoDestacado {
   final bool permanente;
   final String? imagenAsset;
 
-  EventoDestacado({
+  HitoDestacado({ 
     required this.id,
     required this.titulo,
     required this.descripcion,
@@ -30,6 +27,8 @@ class EventoDestacado {
   });
 
   bool esHoy(DateTime hoy) {
+    if (permanente) return false; 
+    
     final inicio = _soloFecha(fechaInicio);
     final fin = fechaFin != null ? _soloFecha(fechaFin!) : inicio;
     final h = _soloFecha(hoy);
@@ -39,7 +38,27 @@ class EventoDestacado {
   static DateTime _soloFecha(DateTime d) => DateTime(d.year, d.month, d.day);
 }
 
-// --- PÁGINA PRINCIPAL (UI Mejorada con texto negro y corrección de layout) ---
+// --- MODELO 2: EventoRelacionado (La actividad específica) ---
+class EventoRelacionado {
+  final int id;
+  final int hitoId;
+  final String titulo; 
+  final String descripcion;
+  final String ubicacion;
+  final DateTime fechaHoraInicio;
+
+  EventoRelacionado({
+    required this.id,
+    required this.hitoId,
+    required this.titulo,
+    required this.descripcion,
+    required this.ubicacion,
+    required this.fechaHoraInicio,
+  });
+}
+
+
+// --- PÁGINA PRINCIPAL: Listado de Hitos ---
 
 class FechasDestacadasPage extends StatefulWidget {
   final Map<String, dynamic>? usuario;
@@ -50,26 +69,27 @@ class FechasDestacadasPage extends StatefulWidget {
 }
 
 class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
-  // --- PALETA DE COLORES (Final con texto en negro) ---
-  final Color primaryColor = const Color(0xFF00796B); // Teal oscuro
-  final Color cardBaseColor = Colors.white; // Fondo de tarjeta blanco
-  final Color todayAccentColor = Colors.white; // La tarjeta "Hoy" se destaca con borde y sombra
-  final Color secondaryColor = const Color(0xFF4DB6AC); // Teal más claro
-  final Color textColorPrimary = Colors.black87; // Títulos principales en NEGRO
-  final Color textColorSecondary = Colors.grey[700]!; // Descripciones y fechas en gris oscuro
+  // --- PALETA DE COLORES FINAL ---
+  final Color primaryColor = const Color(0xFF00796B); 
+  final Color cardBaseColor = Colors.white; 
+  final Color todayAccentColor = Colors.white; 
+  final Color secondaryColor = const Color(0xFF4DB6AC); 
+  final Color textColorPrimary = Colors.black87; 
+  final Color textColorSecondary = Colors.grey[700]!; 
 
   bool _cargando = true;
   String? _error;
-  List<EventoDestacado> _hoy = [];
-  Map<String, List<EventoDestacado>> _porCategoria = {};
+  List<HitoDestacado> _hitosHoy = []; 
+  List<MapEntry<String, List<HitoDestacado>>> _hitosPorCategoriaOrdenados = []; 
 
   @override
   void initState() {
     super.initState();
-    _cargarEventos();
+    _cargarHitos();
   }
 
-  Future<void> _cargarEventos() async {
+  // Lógica de Carga y Ordenación Cronológica de Hitos
+  Future<void> _cargarHitos() async {
     try {
       final rows = await DBService.instance.obtenerFechasDestacadas();
       final ahora = DateTime.now();
@@ -77,7 +97,6 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
 
       final todos = rows.map((row) {
         final String? fiStr = row['fechaInicio'] as String?;
-        // --- LÍNEA CORREGIDA ---
         final String? ffStr = row['fechaFin'] as String?;
 
         final fi = fiStr != null ? DateTime.parse(fiStr) : DateTime.now();
@@ -85,7 +104,7 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
             ? DateTime.parse(ffStr)
             : null;
 
-        return EventoDestacado(
+        return HitoDestacado( 
           id: row['id'] as int,
           titulo: row['titulo'] as String? ?? '',
           descripcion: row['descripcion'] as String? ?? '',
@@ -98,7 +117,7 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
         );
       }).toList();
 
-      List<EventoDestacado> vigentes = [];
+      List<HitoDestacado> vigentes = [];
       for (final e in todos) {
         final ultimoDia = e.fechaFin ?? e.fechaInicio;
         final u = DateTime(ultimoDia.year, ultimoDia.month, ultimoDia.day);
@@ -110,58 +129,58 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
 
       final hoyList = vigentes.where((e) => e.esHoy(hoy)).toList();
 
-      final Map<String, List<EventoDestacado>> porCategoria = {};
+      Map<String, List<HitoDestacado>> porCategoria = {}; 
       for (final e in vigentes) {
         final cat = e.categoria;
         porCategoria.putIfAbsent(cat, () => []);
         porCategoria[cat]!.add(e);
       }
+      
+      // LÓGICA DE ORDENACIÓN CRONOLÓGICA DE CATEGORÍAS
+      var categoriasParaOrdenar = porCategoria.entries.toList();
 
-      final categoriasOrdenadas = Map.fromEntries(
-        porCategoria.entries.toList()
-          ..sort((e1, e2) => e1.key.compareTo(e2.key)),
-      );
+      DateTime getMinDate(List<HitoDestacado> hitos) {
+        DateTime minDate = DateTime(2099, 12, 31); // Fecha muy lejana
+        for (var hito in hitos) {
+          // Solo consideramos eventos no permanentes para determinar la urgencia
+          if (!hito.permanente && hito.fechaInicio.isBefore(minDate)) {
+            minDate = hito.fechaInicio;
+          }
+        }
+        // Si solo hay permanentes, lo empujamos al final con una fecha ficticia muy lejana.
+        return (minDate.year == 2099) ? DateTime(2100, 1, 1) : minDate;
+      }
+
+      // Ordenamos la lista de categorías por la fecha más cercana a hoy.
+      categoriasParaOrdenar.sort((e1, e2) {
+        final date1 = getMinDate(e1.value);
+        final date2 = getMinDate(e2.value);
+        
+        if (date1.isAtSameMomentAs(date2)) {
+          return e1.key.compareTo(e2.key);
+        }
+        return date1.compareTo(date2);
+      });
 
       setState(() {
-        _hoy = hoyList;
-        _porCategoria = categoriasOrdenadas;
+        _hitosHoy = hoyList; 
+        _hitosPorCategoriaOrdenados = categoriasParaOrdenar; 
         _cargando = false;
         _error = null;
       });
     } catch (e) {
       setState(() {
         _cargando = false;
-        _error = 'Error al cargar eventos: $e';
+        _error = 'Error al cargar hitos: $e';
       });
     }
   }
 
+  // --- MÉTODOS DE FORMATO DE FECHA (Sin cambios) ---
   String _formatFechaHoy() {
     final now = DateTime.now();
-    const dias = [
-      'Lunes',
-      'Martes',
-      'Miércoles',
-      'Jueves',
-      'Viernes',
-      'Sábado',
-      'Domingo',
-    ];
-    const meses = [
-      '',
-      'enero',
-      'febrero',
-      'marzo',
-      'abril',
-      'mayo',
-      'junio',
-      'julio',
-      'agosto',
-      'septiembre',
-      'octubre',
-      'noviembre',
-      'diciembre',
-    ];
+    const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const meses = ['', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
     final diaSemana = dias[now.weekday - 1];
     final mes = meses[now.month];
     return '$diaSemana, ${now.day} de ${_capitalizar(mes)} de ${now.year}';
@@ -172,7 +191,7 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
     return texto[0].toUpperCase() + texto.substring(1);
   }
 
-  String _formatearRango(EventoDestacado e) {
+  String _formatearRango(HitoDestacado e) {
     final fi = e.fechaInicio;
     final ff = e.fechaFin;
     String inicio = '${fi.day}/${fi.month}/${fi.year}';
@@ -180,6 +199,8 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
     String fin = '${ff.day}/${ff.month}/${ff.year}';
     return '$inicio - $fin';
   }
+
+  // --- WIDGETS DE CONSTRUCCIÓN ---
 
   @override
   Widget build(BuildContext context) {
@@ -192,7 +213,7 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
           style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: textColorPrimary, // Título del App Bar en NEGRO
+            color: textColorPrimary, // Negro
           ),
         ),
         backgroundColor: Colors.white,
@@ -221,26 +242,30 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
                         _buildDateHeader(fechaHoyTexto),
                         const SizedBox(height: 25),
 
-                        if (_hoy.isNotEmpty) ...[
-                          _buildSectionTitle('🌟 Eventos de Hoy'),
+                        // Sección HOY
+                        if (_hitosHoy.isNotEmpty) ...[
+                          _buildSectionTitle('🌟 Hitos de Hoy'),
                           const SizedBox(height: 15),
                           _buildEventListHorizontal(
                             context,
-                            _hoy,
+                            _hitosHoy,
                             isTodaySection: true,
                           ),
                           const SizedBox(height: 30),
                         ],
 
-                        ..._porCategoria.entries.map((entry) {
+                        // Secciones por categoría
+                        // Iteramos sobre la lista ORDENADA
+                        ..._hitosPorCategoriaOrdenados.map((entry) {
                           final categoria = entry.key;
-                          final eventos = entry.value;
+                          final hitos = entry.value;
 
-                          final eventosRestantes = eventos
-                              .where((e) => !_hoy.contains(e))
+                          // Filtramos para evitar duplicados con "Hitos de Hoy"
+                          final hitosRestantes = hitos
+                              .where((e) => !_hitosHoy.contains(e))
                               .toList();
 
-                          if (eventosRestantes.isEmpty) {
+                          if (hitosRestantes.isEmpty) {
                             return const SizedBox.shrink();
                           }
 
@@ -253,7 +278,7 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
                                 const SizedBox(height: 15),
                                 _buildEventListHorizontal(
                                   context,
-                                  eventosRestantes, 
+                                  hitosRestantes, 
                                   isTodaySection: false,
                                 ),
                               ],
@@ -261,7 +286,7 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
                           );
                         }).toList(),
 
-                        if (_hoy.isEmpty && _porCategoria.isEmpty)
+                        if (_hitosHoy.isEmpty && _hitosPorCategoriaOrdenados.isEmpty)
                           _buildNoEventsMessage(),
                       ],
                     ),
@@ -279,7 +304,7 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
           style: GoogleFonts.poppins(
             fontSize: 22,
             fontWeight: FontWeight.w800,
-            color: textColorPrimary, // Títulos de sección en NEGRO
+            color: textColorPrimary, // Negro
           ),
         ),
         const Divider(
@@ -296,16 +321,13 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
       child: Column(
         children: [
           const SizedBox(height: 50),
-          const Text(
-            '🎉',
-            style: TextStyle(fontSize: 60),
-          ),
+          const Text('🎉', style: TextStyle(fontSize: 60)),
           Text(
-            '¡No hay eventos vigentes o fechas destacadas por ahora!',
+            '¡No hay hitos o fechas importantes vigentes por ahora!',
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               fontSize: 18,
-              color: textColorSecondary, // Texto en gris oscuro
+              color: textColorSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -317,10 +339,7 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
   Widget _buildDateHeader(String date) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        vertical: 18,
-        horizontal: 20,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -344,7 +363,7 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: textColorSecondary, // Texto en gris oscuro
+                    color: textColorSecondary,
                   ),
                 ),
                 Text(
@@ -352,7 +371,7 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: textColorPrimary, // Fecha en NEGRO
+                    color: textColorPrimary, // Negro
                   ),
                 ),
               ],
@@ -368,42 +387,44 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
     );
   }
 
+  // --- LISTA HORIZONTAL DE HITOS ---
   Widget _buildEventListHorizontal(
     BuildContext context,
-    List<EventoDestacado> eventos, {
+    List<HitoDestacado> hitos, { 
     required bool isTodaySection,
   }) {
-    // Altura de la tarjeta ajustada para dar más espacio a la descripción (250 / 230)
-    final double cardHeight = isTodaySection ? 250 : 230; 
+    final double cardHeight = isTodaySection ? 260 : 240; 
     
     return SizedBox(
       height: cardHeight,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: eventos.length,
+        itemCount: hitos.length,
         itemBuilder: (context, index) {
-          final evento = eventos[index];
+          final hito = hitos[index]; 
           return Container(
             width: isTodaySection ? 280 : 260, 
             margin: const EdgeInsets.only(right: 18),
             child: GestureDetector(
               onTap: () {
+                // Navegación a la página de detalle de la fecha (que ahora muestra eventos)
                 Navigator.pushNamed(
                   context,
-                  '/detalleFecha',
-                  arguments: evento, 
+                  // Usamos /detalleFecha, la ruta que ya existe en main.dart
+                  "/detalleFecha", 
+                  arguments: hito, // Pasamos el HitoDestacado
                 );
               },
-              child: _FechaDestacadaCard(
-                titulo: evento.titulo,
-                fecha: _formatearRango(evento),
-                descripcion: evento.descripcion,
-                icono: evento.icono,
+              child: _HitoDestacadaCard( 
+                titulo: hito.titulo,
+                fecha: _formatearRango(hito),
+                descripcion: hito.descripcion,
+                icono: hito.icono,
                 isToday: isTodaySection,
                 cardBaseColor: cardBaseColor,
                 todayAccentColor: todayAccentColor,
                 primaryColor: primaryColor,
-                imagenAsset: evento.imagenAsset,
+                imagenAsset: hito.imagenAsset,
                 textColorPrimary: textColorPrimary, 
                 textColorSecondary: textColorSecondary,
               ),
@@ -415,8 +436,8 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
   }
 }
 
-// --- TARJETA DE EVENTO (con ajustes de imagen y colores) ---
-class _FechaDestacadaCard extends StatelessWidget {
+// --- TARJETA DE HITO ---
+class _HitoDestacadaCard extends StatelessWidget {
   final String titulo;
   final String fecha;
   final String descripcion;
@@ -431,7 +452,8 @@ class _FechaDestacadaCard extends StatelessWidget {
   final Color textColorSecondary;
 
 
-  const _FechaDestacadaCard({
+  _HitoDestacadaCard({
+    Key? key,
     required this.titulo,
     required this.fecha,
     required this.descripcion,
@@ -443,13 +465,13 @@ class _FechaDestacadaCard extends StatelessWidget {
     required this.primaryColor,
     required this.textColorPrimary,
     required this.textColorSecondary,
-  });
+  }) : super(key: key); // Inicialización del Key
 
   @override
   Widget build(BuildContext context) {
     final Color effectiveColor = Colors.white; 
-    final Color currentTitleColor = textColorPrimary; // Título en NEGRO
-    final Color currentDateColor = textColorSecondary; // Fecha en gris oscuro
+    final Color currentTitleColor = textColorPrimary; 
+    final Color currentDateColor = textColorSecondary; 
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -460,7 +482,7 @@ class _FechaDestacadaCard extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withOpacity(isToday ? 0.15 : 0.06),
             blurRadius: isToday ? 18 : 10,
-            offset: Offset(0, isToday ? 8 : 4), 
+            offset: Offset(0, isToday ? 8 : 4),
           ),
         ],
         border: isToday
@@ -473,6 +495,7 @@ class _FechaDestacadaCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Imagen o Icono
           if (imagenAsset != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
@@ -504,13 +527,14 @@ class _FechaDestacadaCard extends StatelessWidget {
                   titulo,
                   style: GoogleFonts.poppins(
                     fontSize: isToday ? 19 : 18,
-                    color: currentTitleColor, // Título en NEGRO
+                    color: currentTitleColor, 
                     fontWeight: FontWeight.w800,
                   ),
-                  maxLines: 1,
+                  maxLines: 2, // Título de 2 líneas
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              // Etiqueta ¡HOY!
               if (isToday)
                 Padding(
                   padding: const EdgeInsets.only(left: 8.0),
@@ -533,30 +557,32 @@ class _FechaDestacadaCard extends StatelessWidget {
             ],
           ),
 
+          // Fecha/Rango
           Text(
             fecha,
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: currentDateColor, // Fecha en gris oscuro
+              color: currentDateColor, 
               fontWeight: FontWeight.w600,
             ),
           ),
 
           const SizedBox(height: 8),
 
-          // Descripción (con más líneas para evitar el corte)
+          // Descripción
           Expanded(
             child: Text(
               descripcion,
               style: GoogleFonts.poppins(
                 fontSize: 13,
-                color: textColorSecondary, // Descripción en gris oscuro
+                color: textColorSecondary, 
               ),
-              maxLines: isToday ? 3 : 4, // Aumentado para asegurar que no se corte
+              maxLines: isToday ? 4 : 5, // Más líneas para la descripción
               overflow: TextOverflow.ellipsis,
             ),
           ),
 
+          // Indicador de Navegación
           Align(
             alignment: Alignment.bottomRight,
             child: Icon(
