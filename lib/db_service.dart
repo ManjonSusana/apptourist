@@ -1850,7 +1850,4 @@ Future<Map<String, dynamic>?> obtenerBarPorId(int id) async {
   return null;
 }
 
-
-}
-
 }
