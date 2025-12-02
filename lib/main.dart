@@ -76,7 +76,7 @@ class MyApp extends StatelessWidget {
           late Map<String, dynamic> restaurante;
           Map<String, dynamic>? usuario;
 
-          if (args is Map && args.containsKey("restaurante")) {
+          if (args is Map<String, dynamic> && args.containsKey("restaurante")) {
             restaurante = args["restaurante"] as Map<String, dynamic>;
             usuario = args["usuario"] as Map<String, dynamic>?;
           }
@@ -167,11 +167,14 @@ class MyApp extends StatelessWidget {
             late Map<String, dynamic> restaurante;
             Map<String, dynamic>? usuario;
 
-            if (args is Map<String, dynamic>) {
+            // PRIMERO verificar si es Map<String, dynamic> con la clave "restaurante"
+            if (args is Map<String, dynamic> && args.containsKey("restaurante")) {
+              restaurante = args["restaurante"] as Map<String, dynamic>;
+              usuario = args["usuario"] as Map<String, dynamic>?;
+            }
+            // Caso cuando se pasa directamente el restaurante (sin envolver)
+            else if (args is Map<String, dynamic>) {
               restaurante = args;
-            } else if (args is Map && args.containsKey("restaurante")) {
-              restaurante = args["restaurante"];
-              usuario = args["usuario"];
             } else {
               throw Exception("Argumentos inválidos para detalleRestaurante");
             }
@@ -181,7 +184,6 @@ class MyApp extends StatelessWidget {
               usuario: usuario,
             );
           },
-        
         // ------------- RUTA DE DETALLE DE HITO (AGENDA) -------------
         "/detalleFecha": (context) {
           // CORRECCIÓN DE TIPO: Casqueo a HitoDestacado

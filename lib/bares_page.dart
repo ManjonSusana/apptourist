@@ -156,10 +156,14 @@ class _BaresPageState extends State<BaresPage> {
             }),
             const Divider(height: 20, thickness: 1),
             _menuItem(Icons.person, "Perfil", () {
-              Navigator.pushNamed(context, "/perfil", arguments: usuario);
+              if (usuario == null) {
+                Navigator.pushNamed(context, "/login");
+              } else {
+                Navigator.pushNamed(context, "/perfil", arguments: usuario);
+              }
             }),
             _menuItem(Icons.logout, "Cerrar sesión", () {
-              Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
+              Navigator.pushNamedAndRemoveUntil(context, "/", (_) => false);
             }, color: Colors.red),
           ],
         ),
