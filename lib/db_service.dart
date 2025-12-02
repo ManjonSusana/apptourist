@@ -19,10 +19,9 @@ class DBService {
     final dir = await getApplicationDocumentsDirectory();
     final path = join(dir.path, "turismo_app.db");
 
-    // Incrementamos la versión para forzar la ejecución de _onUpgrade y _onCreate
     return await openDatabase(
       path,
-      version: 45, // <<<<< NUEVA VERSION
+      version: 47, // Forzar migración de campos de perfil
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -124,40 +123,7 @@ class DBService {
       );
     ''');
 
-    // Tabla fechas destacadas (Hitos/Temas)
-    await db.execute('''
-      CREATE TABLE fechas_destacadas(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        titulo TEXT NOT NULL,
-        descripcion TEXT,
-        icono TEXT,
-        categoria TEXT,
-        fechaInicio TEXT,   -- guardaremos fecha como ISO8601 (String)
-        fechaFin TEXT,      -- opcional, puede ser null
-        permanente INTEGER DEFAULT 0,  -- 0 = no, 1 = sí
-        imagenAsset TEXT
-      );
-    ''');
-    
-    // ===================================================
-    // NUEVA TABLA: Eventos Relacionados (Actividades)
-    // ===================================================
-    await db.execute('''
-      CREATE TABLE eventos_relacionados(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        hitoId INTEGER NOT NULL,
-        titulo TEXT NOT NULL,
-        descripcion TEXT,
-        ubicacion TEXT,
-        fechaHoraInicio TEXT, -- fecha y hora de la actividad
-        FOREIGN KEY (hitoId) REFERENCES fechas_destacadas(id)
-      );
-    ''');
-
-
     await _insertarDatosIniciales(db);
-
-
   }
 
   // ====================================================
@@ -215,30 +181,12 @@ class DBService {
     if (lugaresCount == 0) {
       await _insertarDatosIniciales(db);
     }
-    // Aseguramos que se dropea la nueva tabla si existe
-    await db.execute("DROP TABLE IF EXISTS eventos_relacionados"); 
-    await db.execute("DROP TABLE IF EXISTS comentarios");
-    await db.execute("DROP TABLE IF EXISTS favoritos");
-    await db.execute("DROP TABLE IF EXISTS bares");
-    await db.execute("DROP TABLE IF EXISTS restaurantes");
-    await db.execute("DROP TABLE IF EXISTS lugares");
-    await db.execute("DROP TABLE IF EXISTS usuarios");
-    await db.execute("DROP TABLE IF EXISTS fechas_destacadas");
-
-    await _onCreate(db, newV);
   }
 
   // ====================================================
   //               DATOS INICIALES
   // ====================================================
   Future _insertarDatosIniciales(Database db) async {
-    // ==================== USUARIOS (Ejemplo) ====================
-    await db.insert("usuarios", {
-      "nombre": "Admin User",
-      "correo": "admin@app.com",
-      "password": "password",
-    });
-
     // ==================== LUGARES CAROS ====================
     await db.insert("lugares", {
       "nombre": "Castillo de la Glorieta",
@@ -1546,7 +1494,6 @@ await db.insert("eventos_relacionados", {
 
   }
 
-
   // ====================================================
   //                   USUARIOS
   // ====================================================
@@ -1762,6 +1709,7 @@ await db.insert("eventos_relacionados", {
       WHERE c.restauranteId = ?
       ORDER BY datetime(c.fecha) DESC
     """, [restauranteId]);
+
     return res;
   }
 
@@ -1813,7 +1761,7 @@ await db.insert("eventos_relacionados", {
   // Obtiene un lugar por su ID
 // Obtiene un lugar por su ID
 Future<Map<String, dynamic>?> obtenerLugarPorId(int id) async {
-  final database = await db;  // ✅ usamos el getter `db`
+  final database = await db;  // ✅ usamos el getter db
 
   final res = await database.query(
     'lugares',          // tu tabla de lugares

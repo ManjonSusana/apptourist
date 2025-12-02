@@ -5,17 +5,27 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../db_service.dart';
 import '../detalle_lugar_page.dart';
+// 👇 Ajusta estos nombres si tus páginas se llaman distinto
+import '../detalle_restaurante_page.dart';
+import '../detalle_bares_page.dart';
+
 import '../services/itinerario_ai_service.dart';
 
 class ActividadPlan {
   final String horario;
   final String descripcion;
-  final int? lugarId; // Enlaza con la tabla de lugares
+
+  /// Tabla de referencia: 'lugares', 'restaurantes', 'bares'
+  final String? tabla;
+
+  /// ID dentro de la tabla referenciada
+  final int? refId;
 
   ActividadPlan({
     required this.horario,
     required this.descripcion,
-    this.lugarId,
+    this.tabla,
+    this.refId,
   });
 }
 
@@ -45,7 +55,7 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
   // Itinerario: Día -> Lista de actividades
   Map<String, List<ActividadPlan>> _itinerario = {};
 
-  // 🔹 NUEVO: estado de carga
+  // Estado de carga
   bool _estaCargando = false;
 
   @override
@@ -89,7 +99,6 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
       return;
     }
 
-    // 🔹 Limpiamos itinerario y activamos loading
     setState(() {
       _itinerario = {};
       _estaCargando = true;
@@ -113,11 +122,14 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
         final actividadesConvertidas = <ActividadPlan>[];
 
         for (final act in acts) {
+          final ref = _extraerReferenciaDesdeIA(act['referencia']);
+
           actividadesConvertidas.add(
             ActividadPlan(
               horario: act['hora_label'] ?? '',
               descripcion: act['descripcion'] ?? '',
-              lugarId: _extraerLugarIdDesdeReferencia(act['referencia']),
+              tabla: ref?.tabla,
+              refId: ref?.id,
             ),
           );
         }
@@ -167,7 +179,7 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // 🔹 Contenido principal
+          // Contenido principal
           SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -229,7 +241,7 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
             ),
           ),
 
-          // 🔹 Overlay de carga bonito
+          // Overlay de carga
           if (_estaCargando)
             Positioned.fill(
               child: Container(
@@ -326,7 +338,7 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
 
     return GestureDetector(
       onTap: () async {
-        if (_estaCargando) return; // 🔹 evitamos cambios mientras carga
+        if (_estaCargando) return;
         final DateTime now = DateTime.now();
         final DateTime? fechaSeleccionada = await showDatePicker(
           context: context,
@@ -397,18 +409,12 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
   // ---------- Botón ----------
   Widget _construirBotonRecomendaciones() {
     return GestureDetector(
-      onTap: _estaCargando
-          ? null
-          : () async {
-              await _obtenerRecomendaciones();
-            },
+      onTap: _estaCargando ? null : _obtenerRecomendaciones,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         height: 50,
         decoration: BoxDecoration(
-          color: _estaCargando
-              ? Colors.grey[300]
-              : const Color(0xFFEADCCF),
+          color: _estaCargando ? Colors.grey[300] : const Color(0xFFEADCCF),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             if (!_estaCargando)
@@ -616,8 +622,11 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
                                 : Colors.black87,
                           ),
                         ),
-                        if (actividad.lugarId != null)
-                          _buildLugarPreview(actividad.lugarId!),
+
+                        // 👇 Aquí ahora se muestran cards de lugar / restaurante / bar
+                        if (actividad.refId != null && actividad.tabla != null)
+                          _buildRecursoPreview(actividad),
+
                         if (isFeaturedEvent)
                           Padding(
                             padding: const EdgeInsets.only(top: 5),
@@ -642,7 +651,23 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
     );
   }
 
-  // ---------- Preview de lugar + navegación a DetalleLugarPage ----------
+  // ---------- Decide qué tipo de card mostrar ----------
+  Widget _buildRecursoPreview(ActividadPlan actividad) {
+    final tabla = actividad.tabla;
+    final id = actividad.refId!;
+    switch (tabla) {
+      case 'lugares':
+        return _buildLugarPreview(id);
+      case 'restaurantes':
+        return _buildRestaurantePreview(id);
+      case 'bares':
+        return _buildBarPreview(id);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  // ---------- Preview de lugar + navegación ----------
   Widget _buildLugarPreview(int lugarId) {
     return FutureBuilder<Map<String, dynamic>?>(
       future: DBService.instance.obtenerLugarPorId(lugarId),
@@ -686,95 +711,228 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
               ),
             );
           },
-          child: Container(
-            margin: const EdgeInsets.only(top: 10),
-            child: Row(
-              children: [
-                if (firstImage != null && firstImage.isNotEmpty)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      firstImage,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.broken_image, size: 30),
-                        );
-                      },
-                    ),
-                  )
-                else
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.place,
-                      size: 30,
-                      color: Colors.grey,
-                    ),
-                  ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        lugar['nombre'] ?? '',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        lugar['descripcion'] ?? '',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Ver detalles',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.deepPurple,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          child: _buildMiniCard(
+            firstImage: firstImage,
+            fallbackIcon: Icons.place,
+            titulo: lugar['nombre'] ?? '',
+            descripcion: lugar['descripcion'] ?? '',
           ),
         );
       },
     );
   }
+
+  // ---------- Preview de restaurante ----------
+  Widget _buildRestaurantePreview(int restauranteId) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: DBService.instance.obtenerRestaurantePorId(restauranteId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: SizedBox(
+              height: 60,
+              child: Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const SizedBox.shrink();
+        }
+
+        final restaurante = snapshot.data!;
+        List imagenes = [];
+        try {
+          if (restaurante['imagenes'] != null) {
+            imagenes = jsonDecode(restaurante['imagenes']);
+          }
+        } catch (_) {}
+
+        final String? firstImage =
+            imagenes.isNotEmpty ? imagenes[0]?.toString() : null;
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DetalleRestaurantePage(
+                  restaurante: restaurante,
+                  usuario: widget.usuario,
+                ),
+              ),
+            );
+          },
+          child: _buildMiniCard(
+            firstImage: firstImage,
+            fallbackIcon: Icons.restaurant,
+            titulo: restaurante['nombre'] ?? '',
+            descripcion: restaurante['descripcion'] ?? '',
+          ),
+        );
+      },
+    );
+  }
+
+  // ---------- Preview de bar ----------
+  Widget _buildBarPreview(int barId) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: DBService.instance.obtenerBarPorId(barId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: SizedBox(
+              height: 60,
+              child: Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const SizedBox.shrink();
+        }
+
+        final bar = snapshot.data!;
+        List imagenes = [];
+        try {
+          if (bar['imagenes'] != null) {
+            imagenes = jsonDecode(bar['imagenes']);
+          }
+        } catch (_) {}
+
+        final String? firstImage =
+            imagenes.isNotEmpty ? imagenes[0]?.toString() : null;
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DetalleBarPage(
+                  bar: bar,
+                  usuario: widget.usuario,
+                ),
+              ),
+            );
+          },
+          child: _buildMiniCard(
+            firstImage: firstImage,
+            fallbackIcon: Icons.local_bar,
+            titulo: bar['nombre'] ?? '',
+            descripcion: bar['descripcion'] ?? '',
+          ),
+        );
+      },
+    );
+  }
+
+  // ---------- Mini card reutilizable ----------
+  Widget _buildMiniCard({
+    required String? firstImage,
+    required IconData fallbackIcon,
+    required String titulo,
+    required String descripcion,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      child: Row(
+        children: [
+          if (firstImage != null && firstImage.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                firstImage,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 80,
+                    height: 80,
+                    color: Colors.grey[300],
+                    child: Icon(fallbackIcon, size: 30),
+                  );
+                },
+              ),
+            )
+          else
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                fallbackIcon,
+                size: 30,
+                color: Colors.grey,
+              ),
+            ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  descripcion,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Ver detalles',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.deepPurple,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-// 🔻 Helper para leer la referencia que viene de la IA
-int? _extraerLugarIdDesdeReferencia(dynamic ref) {
+// ---- Helper para leer la referencia que viene de la IA ----
+
+class ReferenciaRecurso {
+  final String tabla;
+  final int id;
+
+  ReferenciaRecurso({required this.tabla, required this.id});
+}
+
+ReferenciaRecurso? _extraerReferenciaDesdeIA(dynamic ref) {
   if (ref == null) return null;
 
   try {
-    final tabla = ref['tabla'] as String?;
+    final tabla = ref['tabla'];
     final id = ref['id'];
 
-    if (tabla == 'lugares' && id is int) {
-      return id;
+    if (tabla is String && id is int) {
+      return ReferenciaRecurso(tabla: tabla, id: id);
     }
   } catch (_) {}
 
