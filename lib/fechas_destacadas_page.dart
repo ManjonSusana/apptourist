@@ -422,15 +422,14 @@ class _HitoDestacadoCard extends StatelessWidget {
   final String icono;
   final bool isToday;
   final String? imagenAsset;
-  
+
   final Color cardBaseColor;
   final Color todayAccentColor;
   final Color primaryColor;
-  final Color textColorPrimary; 
+  final Color textColorPrimary;
   final Color textColorSecondary;
 
-
-  const _HitoDestacadaCard({
+  const _HitoDestacadoCard({
     required this.titulo,
     required this.fecha,
     required this.descripcion,
@@ -446,9 +445,9 @@ class _HitoDestacadoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveColor = Colors.white; 
-    final Color currentTitleColor = textColorPrimary; 
-    final Color currentDateColor = textColorSecondary; 
+    final Color effectiveColor = Colors.white;
+    final Color currentTitleColor = textColorPrimary;
+    final Color currentDateColor = textColorSecondary;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -472,7 +471,6 @@ class _HitoDestacadoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Imagen o Icono
           if (imagenAsset != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
@@ -493,6 +491,7 @@ class _HitoDestacadoCard extends StatelessWidget {
                 ),
               ),
             ),
+
           const SizedBox(height: 10),
 
           Row(
@@ -504,19 +503,19 @@ class _HitoDestacadoCard extends StatelessWidget {
                   titulo,
                   style: GoogleFonts.poppins(
                     fontSize: isToday ? 19 : 18,
-                    color: currentTitleColor, 
+                    color: currentTitleColor,
                     fontWeight: FontWeight.w800,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // Etiqueta ¡HOY!
               if (isToday)
                 Padding(
                   padding: const EdgeInsets.only(left: 8.0),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: primaryColor,
                       borderRadius: BorderRadius.circular(20),
@@ -534,38 +533,37 @@ class _HitoDestacadoCard extends StatelessWidget {
             ],
           ),
 
-          // Fecha/Rango
           Text(
             fecha,
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: currentDateColor, 
+              color: currentDateColor,
               fontWeight: FontWeight.w600,
             ),
           ),
 
           const SizedBox(height: 8),
 
-          // Descripción
           Expanded(
             child: Text(
               descripcion,
               style: GoogleFonts.poppins(
                 fontSize: 13,
-                color: textColorSecondary, 
+                color: textColorSecondary,
               ),
               maxLines: isToday ? 3 : 4,
               overflow: TextOverflow.ellipsis,
             ),
           ),
 
-          // Indicador de Navegación
           Align(
             alignment: Alignment.bottomRight,
             child: Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: isToday ? primaryColor.withOpacity(0.8) : Colors.black38,
+              color: isToday
+                  ? primaryColor.withOpacity(0.8)
+                  : Colors.black38,
             ),
           ),
         ],
