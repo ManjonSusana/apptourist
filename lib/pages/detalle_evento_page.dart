@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart'; // Necesario para abrir Google Maps
+import 'package:geolocator/geolocator.dart';
+
 
 // Importamos los modelos HitoDestacado y EventoRelacionado desde la fuente
 import 'fechas_destacadas_page.dart'; 
@@ -31,20 +33,59 @@ class DetalleEventoPage extends StatelessWidget {
   }
 
   // Función para abrir Google Maps
-  void _openMap(String locationQuery) async {
-    // Intenta abrir Google Maps con el query de ubicación
-    final url = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(locationQuery)}'
-    );
-    
-    // Verifica si la URL puede ser lanzada
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      // Manejo de error (usar un Snackbar o AlertDialog en producción)
-      print('ERROR: No se pudo abrir el mapa para $locationQuery');
+    // Función para abrir Google Maps con "cómo llegar" desde la ubicación actual
+  Future<void> _openMap(BuildContext context) async {
+    try {
+      // 1. Verificar permisos de ubicación
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Permisos de ubicación denegados")),
+          );
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Permisos de ubicación denegados permanentemente"),
+          ),
+        );
+        return;
+      }
+
+      // 2. Obtener ubicación actual
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // 3. Armar destino usando los datos del evento
+      final nombre = evento.titulo;
+      final ubicacion = evento.ubicacion; // Ej: "Plaza 25 de Mayo"
+      final destino = Uri.encodeComponent(
+        "$nombre, $ubicacion, Sucre Bolivia",
+      );
+
+      // 4. URL con direcciones desde ubicación actual hasta el destino
+      final uri = Uri.parse(
+        "https://www.google.com/maps/dir/?api=1"
+        "&origin=${position.latitude},${position.longitude}"
+        "&destination=$destino"
+        "&travelmode=driving",
+      );
+
+      // 5. Abrir Google Maps
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error al abrir el mapa: $e")),
+      );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +128,7 @@ class DetalleEventoPage extends StatelessWidget {
                   const SizedBox(height: 15),
 
                   // 3. Ubicación y Botón de Mapa
-                  _buildLocationSection(),
+                  _buildLocationSection(context),
                   const SizedBox(height: 25),
 
                   // 4. Descripción
@@ -192,7 +233,7 @@ class DetalleEventoPage extends StatelessWidget {
   }
 
   // Widget de Ubicación con botón de Mapa
-  Widget _buildLocationSection() {
+  Widget _buildLocationSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -206,7 +247,7 @@ class DetalleEventoPage extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 39.0),
           child: ElevatedButton.icon(
-            onPressed: () => _openMap(evento.ubicacion),
+            onPressed: () => _openMap(context),
             icon: const Icon(Icons.map, size: 20),
             label: Text(
               'Ver en Google Maps',
@@ -215,8 +256,13 @@ class DetalleEventoPage extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 15,
+                vertical: 12,
+              ),
               elevation: 3,
             ),
           ),
@@ -224,4 +270,5 @@ class DetalleEventoPage extends StatelessWidget {
       ],
     );
   }
+
 }

@@ -1103,68 +1103,73 @@ await db.insert("bares", {
 
 
 
-  // ==================== INSERCIÓN DE HITOS (FECHAS DESTACADAS) ====================
-  
-  // ----------------------------------------------------
-  // CATEGORÍAS UNIFICADAS:
-  // 1. Festividades y Tradiciones
-  // 2. Arte y Cultura
-  // 3. Sociedad y Reivindicación
-  // 4. Gastronomía y Ferias
-  // ----------------------------------------------------
+// ==================== INSERCIÓN DE HITOS (FECHAS DESTACADAS) ====================
 
-  // ID 1: Festival de Danzas (Arte y Cultura - Debería estar en HOY o muy cerca)
-  final hito1Id = await db.insert("fechas_destacadas", {
-    "titulo": "Festival de Danzas Folklóricas",
-    "descripcion": "Muestra de danzas típicas de Chuquisaca y otras regiones de Bolivia, con énfasis en la cultura andina.",
-    "icono": "💃",
-    "categoria": "Arte y Cultura",
-    "fechaInicio": DateTime(2025, 11, 28).toIso8601String(),
-    "fechaFin": DateTime(2025, 12, 1).toIso8601String(), 
-    "permanente": 0,
-    "imagenAsset": "assets/fechas/danzas_festival.jpg",
-  });
+// ----------------------------------------------------
+// CATEGORÍAS UNIFICADAS:
+// 1. Festividades y Tradiciones
+// 2. Arte y Cultura
+// 3. Sociedad y Reivindicación
+// 4. Gastronomía y Ferias
+// ----------------------------------------------------
 
-  // ID 2: Sociedad y Reivindicación (Pasado)
-  final hito2Id = await db.insert("fechas_destacadas", {
-    "titulo": "Día contra la Violencia a la Mujer",
-    "descripcion": "Actividades de concientización y marchas pacíficas en el centro de la ciudad.",
-    "icono": "🎗️",
-    "categoria": "Sociedad y Reivindicación",
-    "fechaInicio": DateTime(2025, 11, 25).toIso8601String(),
-    "fechaFin": DateTime(2025, 11, 25).toIso8601String(),
-    "permanente": 0,
-    "imagenAsset": "assets/fechas/mujer_violencia.jpg",
-  });
-  
-  // ID 3: Festividades y Tradiciones (Próximo)
-  final hito3Id = await db.insert("fechas_destacadas", {
-    "titulo": "Navidad y Pesebres Gigantes",
-    "descripcion": "Celebración de las fiestas de fin de año con pesebres y encuentros familiares. Duración: 20 al 31 de Dic.",
-    "icono": "🎄",
-    "categoria": "Festividades y Tradiciones",
-    "fechaInicio": DateTime(2025, 12, 20).toIso8601String(),
-    "fechaFin": DateTime(2025, 12, 31).toIso8601String(),
-    "permanente": 0,
-    "imagenAsset": "assets/fechas/feria_navidad.jpg",
-  });
+// ID 1: Festival de Danzas (Arte y Cultura - cercano a la fecha actual)
+final hito1Id = await db.insert("fechas_destacadas", {
+  "titulo": "Festival de Danzas Folklóricas",
+  "descripcion":
+      "Muestra de danzas típicas de Chuquisaca y otras regiones de Bolivia, con énfasis en la cultura andina.",
+  "icono": "💃",
+  "categoria": "Arte y Cultura",
+  "fechaInicio": DateTime(2025, 11, 28).toIso8601String(),
+  "fechaFin": DateTime(2025, 12, 1).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/danzas_festival.jpg",
+});
 
-  // ID 4: Gastronomía y Ferias (Permanente)
-  final hito4Id = await db.insert("fechas_destacadas", {
-    "titulo": "Mercado Central Gastronómico",
-    "descripcion": "Sabores típicos de Sucre disponibles todo el año en el Mercado Central.",
-    "icono": "🍲",
-    "categoria": "Gastronomía y Ferias",
-    "fechaInicio": DateTime(2025, 1, 1).toIso8601String(),
-    "fechaFin": DateTime(2025, 12, 31).toIso8601String(),
-    "permanente": 1,
-    "imagenAsset": "assets/fechas/mercado.jpg",
-  });
+// ID 2: Sociedad y Reivindicación
+final hito2Id = await db.insert("fechas_destacadas", {
+  "titulo": "Día contra la Violencia a la Mujer",
+  "descripcion":
+      "Actividades de concientización, ferias informativas y marchas pacíficas en el centro de la ciudad.",
+  "icono": "🎗️",
+  "categoria": "Sociedad y Reivindicación",
+  "fechaInicio": DateTime(2025, 11, 25).toIso8601String(),
+  "fechaFin": DateTime(2025, 11, 25).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/mujer_violencia.jpg",
+});
 
-  // ID 5: Festividades y Tradiciones (Futuro - Mayo 2026)
+// ID 3: Festividades y Tradiciones (Navidad)
+final hito3Id = await db.insert("fechas_destacadas", {
+  "titulo": "Navidad y Pesebres Gigantes",
+  "descripcion":
+      "Celebración de las fiestas de fin de año con pesebres, ferias navideñas y encuentros familiares. Duración: 20 al 31 de diciembre.",
+  "icono": "🎄",
+  "categoria": "Festividades y Tradiciones",
+  "fechaInicio": DateTime(2025, 12, 20).toIso8601String(),
+  "fechaFin": DateTime(2025, 12, 31).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/feria_navidad.jpg",
+});
+
+// ID 4: Gastronomía y Ferias (Permanente)
+final hito4Id = await db.insert("fechas_destacadas", {
+  "titulo": "Mercado Central Gastronómico",
+  "descripcion":
+      "Sabores típicos de Sucre disponibles todo el año en el Mercado Central: chorizos, mondongo, ají de fideo y más.",
+  "icono": "🍲",
+  "categoria": "Gastronomía y Ferias",
+  "fechaInicio": DateTime(2025, 1, 1).toIso8601String(),
+  "fechaFin": DateTime(2025, 12, 31).toIso8601String(),
+  "permanente": 1,
+  "imagenAsset": "assets/fechas/mercado.jpg",
+});
+
+// ID 5: Festividades y Tradiciones (25 de Mayo – Primer Grito Libertario)
 final hito5Id = await db.insert("fechas_destacadas", {
   "titulo": "25 de Mayo – Primer Grito Libertario",
-  "descripcion": "Conmemoración del Primer Grito Libertario de América en 1809, con actos cívicos, desfiles escolares, militares y actividades culturales en la ciudad de Sucre.",
+  "descripcion":
+      "Conmemoración del Primer Grito Libertario de América en 1809, con actos cívicos, desfiles escolares, militares y actividades culturales en la ciudad de Sucre.",
   "icono": "🏛️",
   "categoria": "Festividades y Tradiciones",
   "fechaInicio": DateTime(2026, 5, 25).toIso8601String(),
@@ -1173,87 +1178,89 @@ final hito5Id = await db.insert("fechas_destacadas", {
   "imagenAsset": "assets/fechas/aniversario_sucre.jpg",
 });
 
+// ID 6: Arte y Cultura (Festival Internacional de la Cultura)
+final hito6Id = await db.insert("fechas_destacadas", {
+  "titulo": "Festival Internacional de la Cultura (FIC)",
+  "descripcion":
+      "Muestra de arte, cine, teatro y música con participación nacional e internacional. Actividades en varios espacios culturales de Sucre.",
+  "icono": "🎨",
+  "categoria": "Arte y Cultura",
+  "fechaInicio": DateTime(2026, 6, 10).toIso8601String(),
+  "fechaFin": DateTime(2026, 6, 14).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/fic_festival.jpg",
+});
 
-  // ID 6: Arte y Cultura (Futuro - Junio 2026)
-  final hito6Id = await db.insert("fechas_destacadas", {
-    "titulo": "Festival Internacional de la Cultura (FIC)",
-    "descripcion": "Muestra de arte, cine, teatro y música con participación internacional. Dura 4 días.",
-    "icono": "🎨",
-    "categoria": "Arte y Cultura",
-    "fechaInicio": DateTime(2026, 6, 10).toIso8601String(),
-    "fechaFin": DateTime(2026, 6, 14).toIso8601String(),
-    "permanente": 0,
-    "imagenAsset": "assets/fechas/fic_festival.jpg",
-  });
-  
-  // ID 7: Festividades y Tradiciones (Futuro - Febrero 2026)
-  final hito7Id = await db.insert("fechas_destacadas", {
-    "titulo": "Carnaval de Sucre",
-    "descripcion": "La festividad más colorida y alegre del año, con corsos, entradas y guerra de globos.",
-    "icono": "🎭",
-    "categoria": "Festividades y Tradiciones",
-    "fechaInicio": DateTime(2026, 2, 10).toIso8601String(),
-    "fechaFin": DateTime(2026, 2, 18).toIso8601String(),
-    "permanente": 0,
-    "imagenAsset": "assets/fechas/carnaval.jpg",
-  });
-  
-  // ID 8: Festividades y Tradiciones (Futuro - Septiembre 2026)
-  final hito8Id = await db.insert("fechas_destacadas", {
-    "titulo": "Fiesta de la Virgen de Guadalupe",
-    "descripcion": "La principal festividad religiosa de Sucre con misas, procesiones y feria popular.",
-    "icono": "⛪",
-    "categoria": "Festividades y Tradiciones",
-    "fechaInicio": DateTime(2026, 9, 8).toIso8601String(),
-    "fechaFin": DateTime(2026, 9, 10).toIso8601String(),
-    "permanente": 0,
-    "imagenAsset": "assets/fechas/guadalupe.jpg",
-  });
+// ID 7: Carnaval de Sucre
+final hito7Id = await db.insert("fechas_destacadas", {
+  "titulo": "Carnaval de Sucre",
+  "descripcion":
+      "La festividad más colorida y alegre del año, con corsos, entradas y juegos de agua.",
+  "icono": "🎭",
+  "categoria": "Festividades y Tradiciones",
+  "fechaInicio": DateTime(2026, 2, 10).toIso8601String(),
+  "fechaFin": DateTime(2026, 2, 18).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/carnaval.jpg",
+});
 
-  // ====================================================
-  // DATOS ADICIONALES (Para poblar categorías)
-  // ====================================================
+// ID 8: Fiesta de la Virgen de Guadalupe
+final hito8Id = await db.insert("fechas_destacadas", {
+  "titulo": "Fiesta de la Virgen de Guadalupe",
+  "descripcion":
+      "La principal festividad religiosa de Sucre con misas, procesiones, entradas folclóricas y feria popular.",
+  "icono": "⛪",
+  "categoria": "Festividades y Tradiciones",
+  "fechaInicio": DateTime(2026, 9, 8).toIso8601String(),
+  "fechaFin": DateTime(2026, 9, 10).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/guadalupe.jpg",
+});
 
-  // ID 9: Gastronomía y Ferias (Próximo)
-  final hito9Id = await db.insert("fechas_destacadas", {
-    "titulo": "Feria de la Alasita Sucreña",
-    "descripcion": "Feria tradicional de miniaturas y deseos, enfocada en la abundancia.",
-    "icono": "🎁",
-    "categoria": "Gastronomía y Ferias",
-    "fechaInicio": DateTime(2026, 1, 24).toIso8601String(),
-    "fechaFin": DateTime(2026, 1, 31).toIso8601String(),
-    "permanente": 0,
-    "imagenAsset": "assets/fechas/alasita.jpg",
-  });
-  
-  // ID 10: Arte y Cultura (Futuro)
-  final hito10Id = await db.insert("fechas_destacadas", {
-    "titulo": "Encuentro Nacional de Poesía",
-    "descripcion": "Lecturas y talleres con poetas de todo el país y presentaciones públicas.",
-    "icono": "📚",
-    "categoria": "Arte y Cultura",
-    "fechaInicio": DateTime(2026, 4, 15).toIso8601String(),
-    "fechaFin": DateTime(2026, 4, 18).toIso8601String(),
-    "permanente": 0,
-    "imagenAsset": "assets/fechas/poesia.jpg",
-  });
-  
-  // ID 11: Sociedad y Reivindicación (Pasado)
-  final hito11Id = await db.insert("fechas_destacadas", {
-    "titulo": "Día del Peatón",
-    "descripcion": "Jornada sin coches, dedicada al deporte y actividades familiares en las avenidas principales.",
-    "icono": "🚴",
-    "categoria": "Sociedad y Reivindicación",
-    "fechaInicio": DateTime(2025, 9, 1).toIso8601String(),
-    "fechaFin": DateTime(2025, 9, 1).toIso8601String(),
-    "permanente": 0,
-    "imagenAsset": "assets/fechas/peaton.jpg",
-  });
+// ID 9: Gastronomía y Ferias (Alasita)
+final hito9Id = await db.insert("fechas_destacadas", {
+  "titulo": "Feria de la Alasita Sucreña",
+  "descripcion":
+      "Feria tradicional de miniaturas y deseos, con enfoque en la abundancia, juegos y gastronomía.",
+  "icono": "🎁",
+  "categoria": "Gastronomía y Ferias",
+  "fechaInicio": DateTime(2026, 1, 24).toIso8601String(),
+  "fechaFin": DateTime(2026, 1, 31).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/alasita.jpg",
+});
 
-  final hito12Id = await db.insert("fechas_destacadas", {
+// ID 10: Arte y Cultura (Encuentro de Poesía)
+final hito10Id = await db.insert("fechas_destacadas", {
+  "titulo": "Encuentro Nacional de Poesía",
+  "descripcion":
+      "Lecturas y talleres con poetas de todo el país, actividades en centros culturales y espacios públicos.",
+  "icono": "📚",
+  "categoria": "Arte y Cultura",
+  "fechaInicio": DateTime(2026, 4, 15).toIso8601String(),
+  "fechaFin": DateTime(2026, 4, 18).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/poesia.jpg",
+});
+
+// ID 11: Sociedad y Reivindicación (Día del Peatón)
+final hito11Id = await db.insert("fechas_destacadas", {
+  "titulo": "Día del Peatón",
+  "descripcion":
+      "Jornada sin vehículos motorizados, dedicada al deporte, el esparcimiento y actividades familiares en las avenidas principales.",
+  "icono": "🚴",
+  "categoria": "Sociedad y Reivindicación",
+  "fechaInicio": DateTime(2025, 9, 1).toIso8601String(),
+  "fechaFin": DateTime(2025, 9, 1).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/peaton.jpg",
+});
+
+// ID 12: Semana Santa
+final hito12Id = await db.insert("fechas_destacadas", {
   "titulo": "Semana Santa en Sucre",
   "descripcion":
-      "Celebraciones religiosas, procesiones y actividades culturales durante la Semana Santa.",
+      "Celebraciones religiosas, procesiones y actividades culturales durante la Semana Santa en el casco histórico.",
   "icono": "✝️",
   "categoria": "Festividades y Tradiciones",
   "fechaInicio": DateTime(2026, 4, 2).toIso8601String(),
@@ -1262,10 +1269,11 @@ final hito5Id = await db.insert("fechas_destacadas", {
   "imagenAsset": "assets/fechas/semana_santa.jpg",
 });
 
+// ID 13: Festival del Chocolate
 final hito13Id = await db.insert("fechas_destacadas", {
   "titulo": "Festival del Chocolate Sucrense",
   "descripcion":
-      "Feria dedicada al chocolate chuquisaqueño con degustaciones, talleres y ventas.",
+      "Feria dedicada al chocolate chuquisaqueño con degustaciones, talleres, concursos y ventas.",
   "icono": "🍫",
   "categoria": "Gastronomía y Ferias",
   "fechaInicio": DateTime(2026, 7, 10).toIso8601String(),
@@ -1274,187 +1282,263 @@ final hito13Id = await db.insert("fechas_destacadas", {
   "imagenAsset": "assets/fechas/festival_chocolate.jpg",
 });
 
+// ====================================================
+// EVENTOS RELACIONADOS (ACTIVIDADES) - ENRIQUECIDOS
+// ====================================================
 
+// HITO 1: Festival de Danzas Folklóricas
+await db.insert("eventos_relacionados", {
+  "hitoId": hito1Id,
+  "titulo": "Apertura y Desfile Inaugural",
+  "descripcion":
+      "Presentación de delegaciones nacionales e internacionales con trajes de gala.",
+  "ubicacion": "Plaza 25 de Mayo, frente a la Catedral Metropolitana, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2025, 11, 30, 17, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito1Id,
+  "titulo": "Gala de la Cueca Chuquisaqueña",
+  "descripcion": "Concurso y exhibición de la danza tradicional de Sucre.",
+  "ubicacion": "Teatro Gran Mariscal, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2025, 12, 1, 19, 30).toIso8601String(),
+});
 
-  // ====================================================
-  // NUEVOS DATOS: EVENTOS RELACIONADOS (ACTIVIDADES) - ENRIQUECIDOS
-  // ====================================================
+// HITO 2: Día contra la Violencia a la Mujer
+await db.insert("eventos_relacionados", {
+  "hitoId": hito2Id,
+  "titulo": "Marcha de Sensibilización",
+  "descripcion":
+      "Marcha pacífica con carteles y mensajes de reflexión contra la violencia de género.",
+  "ubicacion": "Plaza 25 de Mayo, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2025, 11, 25, 9, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito2Id,
+  "titulo": "Feria Informativa y Talleres",
+  "descripcion":
+      "Puestos de instituciones y ONG con orientación legal, psicológica y material informativo.",
+  "ubicacion": "Parque Simón Bolívar, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2025, 11, 25, 15, 0).toIso8601String(),
+});
 
-  // Eventos para HITO 1: Festival de Danzas Folklóricas (ID 1)
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito1Id,
-    "titulo": "Apertura y Desfile Inaugural",
-    "descripcion": "Presentación de delegaciones nacionales e internacionales con trajes de gala.",
-    "ubicacion": "Plaza 25 de Mayo (Frontis de la Catedral)",
-    "fechaHoraInicio": DateTime(2025, 11, 30, 17, 0).toIso8601String(),
-  });
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito1Id,
-    "titulo": "Gala de la Cueca Chuquisaqueña",
-    "descripcion": "Concurso y exhibición de la danza tradicional de Sucre.",
-    "ubicacion": "Teatro Gran Mariscal",
-    "fechaHoraInicio": DateTime(2025, 12, 1, 19, 30).toIso8601String(),
-  });
-  
-  // Eventos para HITO 3: Navidad y Pesebres Gigantes (ID 3)
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito3Id,
-    "titulo": "Inauguración de Pesebre Gigante",
-    "descripcion": "Encendido de luces y apertura oficial del pesebre de la ciudad.",
-    "ubicacion": "Parque Infantil (Sector central)",
-    "fechaHoraInicio": DateTime(2025, 12, 20, 19, 0).toIso8601String(),
-  });
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito3Id,
-    "titulo": "Misa de Gallo y Nochebuena",
-    "descripcion": "Ceremonia religiosa principal de Nochebuena.",
-    "ubicacion": "Catedral Metropolitana",
-    "fechaHoraInicio": DateTime(2025, 12, 24, 22, 0).toIso8601String(),
-  });
-
-  await db.insert("eventos_relacionados", {
+// HITO 3: Navidad y Pesebres Gigantes
+await db.insert("eventos_relacionados", {
+  "hitoId": hito3Id,
+  "titulo": "Inauguración de Pesebre Gigante",
+  "descripcion":
+      "Encendido de luces y apertura oficial del pesebre de la ciudad.",
+  "ubicacion": "Parque Infantil, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2025, 12, 20, 19, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito3Id,
+  "titulo": "Misa de Gallo y Nochebuena",
+  "descripcion": "Ceremonia religiosa principal de Nochebuena.",
+  "ubicacion": "Catedral Metropolitana de Sucre, Plaza 25 de Mayo, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2025, 12, 24, 22, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
   "hitoId": hito3Id,
   "titulo": "Feria Navideña de Sucre",
   "descripcion":
       "Feria navideña con artesanías, juguetes, luces y puestos de comida típica.",
-  "ubicacion": "Zona Feria Navideña (Sucre)",
+  "ubicacion": "Parque Multiproposito, Sucre, Bolivia",
   "fechaHoraInicio": DateTime(2025, 12, 21, 18, 0).toIso8601String(),
 });
-
 await db.insert("eventos_relacionados", {
   "hitoId": hito3Id,
   "titulo": "Noche de Coros y Villancicos",
   "descripcion":
       "Presentación de coros navideños y grupos musicales locales al aire libre.",
-  "ubicacion": "Plaza 25 de Mayo (frente a la Catedral)",
+  "ubicacion": "Plaza 25 de Mayo, frente a la Catedral, Sucre, Bolivia",
   "fechaHoraInicio": DateTime(2025, 12, 23, 19, 30).toIso8601String(),
 });
-
 await db.insert("eventos_relacionados", {
   "hitoId": hito3Id,
   "titulo": "Feria Gastronómica Navideña",
   "descripcion":
       "Puestos de comida con buñuelos, api, picana y platos típicos de la temporada.",
-  "ubicacion": "Alrededores del Estadio Patria / zona ferial",
+  "ubicacion": "Zona ferial, alrededores del Estadio Patria, Sucre, Bolivia",
   "fechaHoraInicio": DateTime(2025, 12, 23, 12, 0).toIso8601String(),
 });
 
-  
-  // Eventos para HITO 7: Carnaval de Sucre (ID 7)
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito7Id,
-    "titulo": "Elección y Coronación de la Reina del Carnaval",
-    "descripcion": "Evento de gala con presentación de candidatas y fiesta de apertura.",
-    "ubicacion": "Coliseo Universitario",
-    "fechaHoraInicio": DateTime(2026, 2, 10, 20, 0).toIso8601String(),
-  });
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito7Id,
-    "titulo": "Entrada Folklórica del Carnaval",
-    "descripcion": "El evento central con comparsas y disfraces tradicionales.",
-    "ubicacion": "Recorrido central (Av. Hernando Siles)",
-    "fechaHoraInicio": DateTime(2026, 2, 14, 14, 0).toIso8601String(),
-  });
+// HITO 4: Mercado Central Gastronómico (permanente)
+await db.insert("eventos_relacionados", {
+  "hitoId": hito4Id,
+  "titulo": "Día de la Picana Navideña",
+  "descripcion": "Promoción especial de picana y platos de Año Nuevo.",
+  "ubicacion": "Mercado Central, sección comidas, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 1, 1, 12, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito4Id,
+  "titulo": "Taller de preparación de chorizos chuquisaqueños",
+  "descripcion":
+      "Aprende a preparar chorizos con expertos cocineros del mercado.",
+  "ubicacion": "Mercado Central, piso 2, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 1, 15, 10, 0).toIso8601String(),
+});
 
-  // Eventos para HITO 8: Fiesta de Guadalupe (ID 8)
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito8Id,
-    "titulo": "Procesión y Desfile de Carros Alegóricos",
-    "descripcion": "La procesión más importante de la ciudad, un gran evento religioso.",
-    "ubicacion": "Catedral -> La Recoleta",
-    "fechaHoraInicio": DateTime(2026, 9, 8, 15, 0).toIso8601String(),
-  });
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito8Id,
-    "titulo": "Feria Popular de Comida y Música",
-    "descripcion": "Stands de comida tradicional, juegos y música en vivo.",
-    "ubicacion": "Zona del Estadio Patria",
-    "fechaHoraInicio": DateTime(2026, 9, 9, 10, 0).toIso8601String(),
-  });
-  
-  // Eventos para HITO 9: Feria de la Alasita Sucreña (ID 9)
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito9Id,
-    "titulo": "Inauguración de la Feria y Bendición",
-    "descripcion": "Apertura oficial de la feria con ritos de bendición a las miniaturas.",
-    "ubicacion": "Campo Ferial (Zona Max Toledo)",
-    "fechaHoraInicio": DateTime(2026, 1, 24, 11, 0).toIso8601String(),
-  });
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito9Id,
-    "titulo": "Venta de Platos Típicos a Miniatura",
-    "descripcion": "Platos tradicionales vendidos en tamaño miniatura para rituales de prosperidad.",
-    "ubicacion": "Sector Gastronómico",
-    "fechaHoraInicio": DateTime(2026, 1, 27, 12, 0).toIso8601String(),
-  });
+// HITO 5: 25 de Mayo – Primer Grito Libertario
+await db.insert("eventos_relacionados", {
+  "hitoId": hito5Id,
+  "titulo": "Sesión de Honor en la Casa de la Libertad",
+  "descripcion":
+      "Acto cívico central con autoridades locales y departamentales.",
+  "ubicacion": "Casa de la Libertad, Plaza 25 de Mayo, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 5, 25, 9, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito5Id,
+  "titulo": "Desfile Cívico Escolar y Militar",
+  "descripcion":
+      "Desfile con unidades educativas, organizaciones e instituciones armadas.",
+  "ubicacion": "Plaza 25 de Mayo y Av. de las Américas, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 5, 25, 10, 30).toIso8601String(),
+});
 
+// HITO 6: Festival Internacional de la Cultura (FIC)
+await db.insert("eventos_relacionados", {
+  "hitoId": hito6Id,
+  "titulo": "Muestra de Cine Boliviano",
+  "descripcion":
+      "Proyección de películas nacionales con conversatorios posteriores.",
+  "ubicacion": "Centro Cultural Universitario, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 6, 11, 18, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito6Id,
+  "titulo": "Concierto de Clausura FIC",
+  "descripcion":
+      "Presentación de bandas y artistas invitados en un concierto al aire libre.",
+  "ubicacion": "Teatro Gran Mariscal, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 6, 14, 20, 0).toIso8601String(),
+});
 
-  // Eventos para HITO 10: Encuentro Nacional de Poesía (ID 10)
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito10Id,
-    "titulo": "Taller de Métrica y Verso Clásico",
-    "descripcion": "Taller dirigido a jóvenes escritores en el Centro Cultural.",
-    "ubicacion": "Centro Cultural Universitario",
-    "fechaHoraInicio": DateTime(2026, 4, 16, 15, 0).toIso8601String(),
-  });
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito10Id,
-    "titulo": "Recital Poético Central (Abierto al Público)",
-    "descripcion": "Lecturas centrales con poetas invitados de renombre.",
-    "ubicacion": "Casa de la Cultura",
-    "fechaHoraInicio": DateTime(2026, 4, 17, 19, 0).toIso8601String(),
-  });
+// HITO 7: Carnaval de Sucre
+await db.insert("eventos_relacionados", {
+  "hitoId": hito7Id,
+  "titulo": "Elección y Coronación de la Reina del Carnaval",
+  "descripcion":
+      "Evento de gala con presentación de candidatas y fiesta de apertura.",
+  "ubicacion": "Coliseo Jorge Revilla Aldana, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 2, 10, 20, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito7Id,
+  "titulo": "Entrada Folklórica del Carnaval",
+  "descripcion":
+      "El evento central con comparsas, bandas y disfraces tradicionales.",
+  "ubicacion": "Av. Hernando Siles, recorrido central del Carnaval, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 2, 14, 14, 0).toIso8601String(),
+});
 
+// HITO 8: Fiesta de Guadalupe
+await db.insert("eventos_relacionados", {
+  "hitoId": hito8Id,
+  "titulo": "Procesión y desfile de carros alegóricos",
+  "descripcion":
+      "La procesión más importante de la ciudad, con participación masiva de fieles.",
+  "ubicacion": "Desde la Catedral Metropolitana hasta La Recoleta, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 9, 8, 15, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito8Id,
+  "titulo": "Feria popular de comida y música",
+  "descripcion":
+      "Stands de comida tradicional, juegos y música en vivo.",
+  "ubicacion": "Zona Estadio Patria, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 9, 9, 10, 0).toIso8601String(),
+});
 
-  // Eventos para HITO 4: Mercado Central Gastronómico (ID 4 - Ejemplo permanente)
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito4Id,
-    "titulo": "Día de la Picana Navideña (1 de Enero)",
-    "descripcion": "Promoción especial de Picana y platos de Año Nuevo.",
-    "ubicacion": "Mercado Central, Sección Comidas",
-    "fechaHoraInicio": DateTime(2026, 1, 1, 12, 0).toIso8601String(),
-  });
-  await db.insert("eventos_relacionados", {
-    "hitoId": hito4Id,
-    "titulo": "Taller de preparación de chorizos Chuquisaqueños",
-    "descripcion": "Aprende a preparar chorizos con expertos cocineros del mercado.",
-    "ubicacion": "Mercado Central, Piso 2 (Cocinas)",
-    "fechaHoraInicio": DateTime(2026, 1, 15, 10, 0).toIso8601String(),
-  });
+// HITO 9: Feria de la Alasita Sucreña
+await db.insert("eventos_relacionados", {
+  "hitoId": hito9Id,
+  "titulo": "Inauguración de la feria y bendición",
+  "descripcion":
+      "Apertura oficial con ritos de bendición a las miniaturas y discursos.",
+  "ubicacion": "Campo Ferial Multipropósito, zona Max Toledo, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 1, 24, 11, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito9Id,
+  "titulo": "Venta de platos típicos a miniatura",
+  "descripcion":
+      "Platos tradicionales vendidos en tamaño miniatura para rituales de prosperidad.",
+  "ubicacion":
+      "Sector gastronómico, Campo Ferial Multipropósito, zona Max Toledo, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 1, 27, 12, 0).toIso8601String(),
+});
 
-  await db.insert("eventos_relacionados", {
+// HITO 10: Encuentro Nacional de Poesía
+await db.insert("eventos_relacionados", {
+  "hitoId": hito10Id,
+  "titulo": "Taller de métrica y verso clásico",
+  "descripcion":
+      "Taller dirigido a jóvenes escritores en el Centro Cultural Universitario.",
+  "ubicacion": "Centro Cultural Universitario, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 4, 16, 15, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito10Id,
+  "titulo": "Recital poético central (abierto al público)",
+  "descripcion":
+      "Lecturas centrales con poetas invitados de renombre.",
+  "ubicacion": "Casa de la Cultura, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 4, 17, 19, 0).toIso8601String(),
+});
+
+// HITO 11: Día del Peatón
+await db.insert("eventos_relacionados", {
+  "hitoId": hito11Id,
+  "titulo": "Ciclovía recreativa",
+  "descripcion":
+      "Espacios habilitados para bicicletas, patines y caminatas familiares.",
+  "ubicacion": "Av. de las Américas, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2025, 9, 1, 9, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito11Id,
+  "titulo": "Feria de salud y deportes",
+  "descripcion":
+      "Actividades deportivas, chequeos médicos básicos y juegos para niños.",
+  "ubicacion": "Plaza 25 de Mayo, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2025, 9, 1, 10, 30).toIso8601String(),
+});
+
+// HITO 12: Semana Santa
+await db.insert("eventos_relacionados", {
   "hitoId": hito12Id,
   "titulo": "Procesión del Viernes Santo",
   "descripcion":
       "Procesión principal con recorrido por el centro histórico de Sucre.",
-  "ubicacion": "Centro Histórico (Plaza 25 de Mayo y alrededores)",
+  "ubicacion": "Centro histórico, Plaza 25 de Mayo y alrededores, Sucre, Bolivia",
   "fechaHoraInicio": DateTime(2026, 4, 3, 18, 0).toIso8601String(),
 });
-
 await db.insert("eventos_relacionados", {
   "hitoId": hito12Id,
-  "titulo": "Vía Crucis Juvenil",
+  "titulo": "Vía Crucis juvenil",
   "descripcion":
       "Recorrido juvenil con meditaciones en diferentes puntos de la ciudad.",
-  "ubicacion": "Desde la Catedral hasta La Recoleta",
+  "ubicacion": "Desde la Catedral Metropolitana hasta La Recoleta, Sucre, Bolivia",
   "fechaHoraInicio": DateTime(2026, 4, 4, 9, 0).toIso8601String(),
 });
-  
 
-  await db.insert("eventos_relacionados", {
-  "hitoId": hito13Id,
-  "titulo": "Inauguración del Festival del Chocolate",
-  "descripcion": "Apertura oficial con exposición de marcas locales de chocolate.",
-  "ubicacion": "Centro Cultural Universitario",
-  "fechaHoraInicio": DateTime(2026, 7, 10, 10, 0).toIso8601String(),
-});
-
+// HITO 13: Festival del Chocolate Sucrense
 await db.insert("eventos_relacionados", {
   "hitoId": hito13Id,
-  "titulo": "Taller de Bombones Artesanales",
+  "titulo": "Inauguración del Festival del Chocolate",
+  "descripcion":
+      "Apertura oficial con exposición de marcas locales de chocolate.",
+  "ubicacion": "Centro Cultural Universitario, Sucre, Bolivia",
+  "fechaHoraInicio": DateTime(2026, 7, 10, 10, 0).toIso8601String(),
+});
+await db.insert("eventos_relacionados", {
+  "hitoId": hito13Id,
+  "titulo": "Taller de bombones artesanales",
   "descripcion":
       "Taller práctico para aprender a hacer bombones con chocolate sucrense.",
-  "ubicacion": "Casa de la Cultura",
+  "ubicacion": "Casa de la Cultura, Sucre, Bolivia",
   "fechaHoraInicio": DateTime(2026, 7, 11, 15, 0).toIso8601String(),
 });
 
@@ -1462,7 +1546,6 @@ await db.insert("eventos_relacionados", {
 
 
   }
-
 
   // ====================================================
   //                   USUARIOS
@@ -1743,6 +1826,31 @@ Future<Map<String, dynamic>?> obtenerLugarPorId(int id) async {
     return res.first;
   }
   return null;
+}
+
+Future<Map<String, dynamic>?> obtenerRestaurantePorId(int id) async {
+  final database = await db;
+  final res = await database.query(
+    'restaurantes', // 👈 nombre de tu tabla de restaurantes
+    where: 'id = ?',
+    whereArgs: [id],
+  );
+  if (res.isNotEmpty) return res.first;
+  return null;
+}
+
+Future<Map<String, dynamic>?> obtenerBarPorId(int id) async {
+  final database = await db;
+  final res = await database.query(
+    'bares', // 👈 nombre de tu tabla de bares
+    where: 'id = ?',
+    whereArgs: [id],
+  );
+  if (res.isNotEmpty) return res.first;
+  return null;
+}
+
+
 }
 
 }
