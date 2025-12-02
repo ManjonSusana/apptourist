@@ -22,7 +22,7 @@ class DBService {
     // Incrementamos la versión para forzar la ejecución de _onUpgrade y _onCreate
     return await openDatabase(
       path,
-      version: 41, // <<<<< NUEVA VERSION
+      version: 43, // <<<<< NUEVA VERSION
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -1161,16 +1161,17 @@ await db.insert("bares", {
   });
 
   // ID 5: Festividades y Tradiciones (Futuro - Mayo 2026)
-  final hito5Id = await db.insert("fechas_destacadas", {
-    "titulo": "Aniversario de Sucre y Desfile Cívico",
-    "descripcion": "Conmemoración de la Fundación de la Villa de La Plata con actos oficiales y desfiles.",
-    "icono": "🏛️",
-    "categoria": "Festividades y Tradiciones",
-    "fechaInicio": DateTime(2026, 5, 25).toIso8601String(),
-    "fechaFin": DateTime(2026, 5, 25).toIso8601String(),
-    "permanente": 0,
-    "imagenAsset": "assets/fechas/aniversario_sucre.jpg",
-  });
+final hito5Id = await db.insert("fechas_destacadas", {
+  "titulo": "25 de Mayo – Primer Grito Libertario",
+  "descripcion": "Conmemoración del Primer Grito Libertario de América en 1809, con actos cívicos, desfiles escolares, militares y actividades culturales en la ciudad de Sucre.",
+  "icono": "🏛️",
+  "categoria": "Festividades y Tradiciones",
+  "fechaInicio": DateTime(2026, 5, 25).toIso8601String(),
+  "fechaFin": DateTime(2026, 5, 25).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/aniversario_sucre.jpg",
+});
+
 
   // ID 6: Arte y Cultura (Futuro - Junio 2026)
   final hito6Id = await db.insert("fechas_destacadas", {
@@ -1248,6 +1249,31 @@ await db.insert("bares", {
     "imagenAsset": "assets/fechas/peaton.jpg",
   });
 
+  final hito12Id = await db.insert("fechas_destacadas", {
+  "titulo": "Semana Santa en Sucre",
+  "descripcion":
+      "Celebraciones religiosas, procesiones y actividades culturales durante la Semana Santa.",
+  "icono": "✝️",
+  "categoria": "Festividades y Tradiciones",
+  "fechaInicio": DateTime(2026, 4, 2).toIso8601String(),
+  "fechaFin": DateTime(2026, 4, 5).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/semana_santa.jpg",
+});
+
+final hito13Id = await db.insert("fechas_destacadas", {
+  "titulo": "Festival del Chocolate Sucrense",
+  "descripcion":
+      "Feria dedicada al chocolate chuquisaqueño con degustaciones, talleres y ventas.",
+  "icono": "🍫",
+  "categoria": "Gastronomía y Ferias",
+  "fechaInicio": DateTime(2026, 7, 10).toIso8601String(),
+  "fechaFin": DateTime(2026, 7, 14).toIso8601String(),
+  "permanente": 0,
+  "imagenAsset": "assets/fechas/festival_chocolate.jpg",
+});
+
+
 
   // ====================================================
   // NUEVOS DATOS: EVENTOS RELACIONADOS (ACTIVIDADES) - ENRIQUECIDOS
@@ -1284,6 +1310,34 @@ await db.insert("bares", {
     "ubicacion": "Catedral Metropolitana",
     "fechaHoraInicio": DateTime(2025, 12, 24, 22, 0).toIso8601String(),
   });
+
+  await db.insert("eventos_relacionados", {
+  "hitoId": hito3Id,
+  "titulo": "Feria Navideña de Sucre",
+  "descripcion":
+      "Feria navideña con artesanías, juguetes, luces y puestos de comida típica.",
+  "ubicacion": "Zona Feria Navideña (Sucre)",
+  "fechaHoraInicio": DateTime(2025, 12, 21, 18, 0).toIso8601String(),
+});
+
+await db.insert("eventos_relacionados", {
+  "hitoId": hito3Id,
+  "titulo": "Noche de Coros y Villancicos",
+  "descripcion":
+      "Presentación de coros navideños y grupos musicales locales al aire libre.",
+  "ubicacion": "Plaza 25 de Mayo (frente a la Catedral)",
+  "fechaHoraInicio": DateTime(2025, 12, 23, 19, 30).toIso8601String(),
+});
+
+await db.insert("eventos_relacionados", {
+  "hitoId": hito3Id,
+  "titulo": "Feria Gastronómica Navideña",
+  "descripcion":
+      "Puestos de comida con buñuelos, api, picana y platos típicos de la temporada.",
+  "ubicacion": "Alrededores del Estadio Patria / zona ferial",
+  "fechaHoraInicio": DateTime(2025, 12, 23, 12, 0).toIso8601String(),
+});
+
   
   // Eventos para HITO 7: Carnaval de Sucre (ID 7)
   await db.insert("eventos_relacionados", {
@@ -1366,7 +1420,45 @@ await db.insert("bares", {
     "ubicacion": "Mercado Central, Piso 2 (Cocinas)",
     "fechaHoraInicio": DateTime(2026, 1, 15, 10, 0).toIso8601String(),
   });
+
+  await db.insert("eventos_relacionados", {
+  "hitoId": hito12Id,
+  "titulo": "Procesión del Viernes Santo",
+  "descripcion":
+      "Procesión principal con recorrido por el centro histórico de Sucre.",
+  "ubicacion": "Centro Histórico (Plaza 25 de Mayo y alrededores)",
+  "fechaHoraInicio": DateTime(2026, 4, 3, 18, 0).toIso8601String(),
+});
+
+await db.insert("eventos_relacionados", {
+  "hitoId": hito12Id,
+  "titulo": "Vía Crucis Juvenil",
+  "descripcion":
+      "Recorrido juvenil con meditaciones en diferentes puntos de la ciudad.",
+  "ubicacion": "Desde la Catedral hasta La Recoleta",
+  "fechaHoraInicio": DateTime(2026, 4, 4, 9, 0).toIso8601String(),
+});
   
+
+  await db.insert("eventos_relacionados", {
+  "hitoId": hito13Id,
+  "titulo": "Inauguración del Festival del Chocolate",
+  "descripcion": "Apertura oficial con exposición de marcas locales de chocolate.",
+  "ubicacion": "Centro Cultural Universitario",
+  "fechaHoraInicio": DateTime(2026, 7, 10, 10, 0).toIso8601String(),
+});
+
+await db.insert("eventos_relacionados", {
+  "hitoId": hito13Id,
+  "titulo": "Taller de Bombones Artesanales",
+  "descripcion":
+      "Taller práctico para aprender a hacer bombones con chocolate sucrense.",
+  "ubicacion": "Casa de la Cultura",
+  "fechaHoraInicio": DateTime(2026, 7, 11, 15, 0).toIso8601String(),
+});
+
+
+
 
   }
 

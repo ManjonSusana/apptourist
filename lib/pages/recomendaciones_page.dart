@@ -45,6 +45,9 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
   // Itinerario: Día -> Lista de actividades
   Map<String, List<ActividadPlan>> _itinerario = {};
 
+  // 🔹 NUEVO: estado de carga
+  bool _estaCargando = false;
+
   @override
   void dispose() {
     _diasCtrl.dispose();
@@ -52,89 +55,97 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
   }
 
   // ================== LÓGICA PRINCIPAL ==================
- Future<void> _obtenerRecomendaciones() async {
-  FocusScope.of(context).unfocus();
+  Future<void> _obtenerRecomendaciones() async {
+    FocusScope.of(context).unfocus();
 
-  final String textDias = _diasCtrl.text.trim();
-  final int dias = int.tryParse(textDias) ?? 0;
+    final String textDias = _diasCtrl.text.trim();
+    final int dias = int.tryParse(textDias) ?? 0;
 
-  if (_fechaInicio == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "Por favor, selecciona la fecha de inicio del viaje.",
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: Colors.orange,
-      ),
-    );
-    setState(() => _itinerario = {});
-    return;
-  }
-
-  if (dias <= 0) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "Ingresa un número de días válido (mayor a cero).",
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: Colors.redAccent,
-      ),
-    );
-    setState(() => _itinerario = {});
-    return;
-  }
-
-  setState(() {
-    _itinerario = {};
-  });
-
-  try {
-    final respuestaIA =
-        await ItinerarioAIService.instance.generarItinerarioConIA(
-      fechaInicio: _fechaInicio!,
-      dias: dias,
-      preferencias: _preferenciasSeleccionadas,
-      usuario: widget.usuario,
-    );
-
-    final Map<String, List<ActividadPlan>> nuevoItinerario = {};
-
-    final List diasIA = respuestaIA['dias'] ?? [];
-    for (final dia in diasIA) {
-      final String nombreDia = dia['nombre_dia'] ?? 'Día sin nombre';
-      final List acts = dia['actividades'] ?? [];
-      final actividadesConvertidas = <ActividadPlan>[];
-
-      for (final act in acts) {
-        actividadesConvertidas.add(
-          ActividadPlan(
-            horario: act['hora_label'] ?? '',
-            descripcion: act['descripcion'] ?? '',
-            lugarId: _extraerLugarIdDesdeReferencia(act['referencia']),
+    if (_fechaInicio == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Por favor, selecciona la fecha de inicio del viaje.",
+            style: GoogleFonts.poppins(),
           ),
-        );
-      }
-
-      nuevoItinerario[nombreDia] = actividadesConvertidas;
+          backgroundColor: Colors.orange,
+        ),
+      );
+      setState(() => _itinerario = {});
+      return;
     }
 
-    setState(() {
-      _itinerario = nuevoItinerario;
-    });
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "No se pudo generar el itinerario con IA: $e",
-          style: GoogleFonts.poppins(),
+    if (dias <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Ingresa un número de días válido (mayor a cero).",
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: Colors.redAccent,
         ),
-        backgroundColor: Colors.redAccent,
-      ),
-    );
+      );
+      setState(() => _itinerario = {});
+      return;
+    }
+
+    // 🔹 Limpiamos itinerario y activamos loading
+    setState(() {
+      _itinerario = {};
+      _estaCargando = true;
+    });
+
+    try {
+      final respuestaIA =
+          await ItinerarioAIService.instance.generarItinerarioConIA(
+        fechaInicio: _fechaInicio!,
+        dias: dias,
+        preferencias: _preferenciasSeleccionadas,
+        usuario: widget.usuario,
+      );
+
+      final Map<String, List<ActividadPlan>> nuevoItinerario = {};
+
+      final List diasIA = respuestaIA['dias'] ?? [];
+      for (final dia in diasIA) {
+        final String nombreDia = dia['nombre_dia'] ?? 'Día sin nombre';
+        final List acts = dia['actividades'] ?? [];
+        final actividadesConvertidas = <ActividadPlan>[];
+
+        for (final act in acts) {
+          actividadesConvertidas.add(
+            ActividadPlan(
+              horario: act['hora_label'] ?? '',
+              descripcion: act['descripcion'] ?? '',
+              lugarId: _extraerLugarIdDesdeReferencia(act['referencia']),
+            ),
+          );
+        }
+
+        nuevoItinerario[nombreDia] = actividadesConvertidas;
+      }
+
+      setState(() {
+        _itinerario = nuevoItinerario;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "No se pudo generar el itinerario con IA: $e",
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _estaCargando = false;
+        });
+      }
+    }
   }
-}
 
   // ================== UI ==================
   @override
@@ -154,65 +165,124 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Preferencias
-            Text(
-              '1. Selecciona tus intereses principales:',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+      body: Stack(
+        children: [
+          // 🔹 Contenido principal
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Preferencias
+                Text(
+                  '1. Selecciona tus intereses principales:',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _buildPreferenceChips(),
+                const SizedBox(height: 20),
+
+                // 2. Fecha
+                Text(
+                  '2. ¿Cuándo inicias tu viaje?',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _buildDatePicker(),
+                const SizedBox(height: 20),
+
+                // 3. Días
+                Text(
+                  '3. Ingresa la duración de tu estadía:',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _construirCampoDias(),
+                const SizedBox(height: 20),
+
+                // Botón
+                _construirBotonRecomendaciones(),
+                const SizedBox(height: 30),
+
+                // Resultado
+                if (_itinerario.isNotEmpty)
+                  Text(
+                    '4. Tu Plan de Viaje por Día:',
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                if (_itinerario.isNotEmpty) const SizedBox(height: 10),
+
+                _construirItinerario(),
+              ],
             ),
-            const SizedBox(height: 10),
-            _buildPreferenceChips(),
-            const SizedBox(height: 20),
+          ),
 
-            // 2. Fecha
-            Text(
-              '2. ¿Cuándo inicias tu viaje?',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            _buildDatePicker(),
-            const SizedBox(height: 20),
-
-            // 3. Días
-            Text(
-              '3. Ingresa la duración de tu estadía:',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            _construirCampoDias(),
-            const SizedBox(height: 20),
-
-            // Botón
-            _construirBotonRecomendaciones(),
-            const SizedBox(height: 30),
-
-            // Resultado
-            if (_itinerario.isNotEmpty)
-              Text(
-                '4. Tu Plan de Viaje por Día:',
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
+          // 🔹 Overlay de carga bonito
+          if (_estaCargando)
+            Positioned.fill(
+              child: Container(
+                color: Colors.white.withOpacity(0.72),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.12),
+                          blurRadius: 18,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Generando tu itinerario…',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Conectando con la IA y analizando\nlos mejores lugares para ti.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            if (_itinerario.isNotEmpty) const SizedBox(height: 10),
-
-            _construirItinerario(),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -256,6 +326,7 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
 
     return GestureDetector(
       onTap: () async {
+        if (_estaCargando) return; // 🔹 evitamos cambios mientras carga
         final DateTime now = DateTime.now();
         final DateTime? fechaSeleccionada = await showDatePicker(
           context: context,
@@ -311,6 +382,7 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
   Widget _construirCampoDias() {
     return TextField(
       controller: _diasCtrl,
+      enabled: !_estaCargando,
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
         hintText: 'Ej: 3',
@@ -325,31 +397,61 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
   // ---------- Botón ----------
   Widget _construirBotonRecomendaciones() {
     return GestureDetector(
-      onTap: () async {
-      await _obtenerRecomendaciones();
-    },
-      child: Container(
+      onTap: _estaCargando
+          ? null
+          : () async {
+              await _obtenerRecomendaciones();
+            },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         height: 50,
         decoration: BoxDecoration(
-          color: const Color(0xFFEADCCF),
+          color: _estaCargando
+              ? Colors.grey[300]
+              : const Color(0xFFEADCCF),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.18),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
+            if (!_estaCargando)
+              BoxShadow(
+                color: Colors.black.withOpacity(0.18),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
           ],
         ),
         child: Center(
-          child: Text(
-            'Generar Itinerario',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              color: Colors.black87,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          child: _estaCargando
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.black87),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Generando…',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                )
+              : Text(
+                  'Generar Itinerario',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
         ),
       ),
     );
@@ -662,11 +764,11 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
     );
   }
 }
+
+// 🔻 Helper para leer la referencia que viene de la IA
 int? _extraerLugarIdDesdeReferencia(dynamic ref) {
   if (ref == null) return null;
 
-  // La IA devuelve algo como:
-  // { "tabla": "lugares", "id": 4 }
   try {
     final tabla = ref['tabla'] as String?;
     final id = ref['id'];

@@ -165,8 +165,23 @@ class ItinerarioAIService {
     final prompt = '''
 Eres un planificador turístico experto en Sucre, Bolivia.
 
-Usa ÚNICAMENTE la información del siguiente JSON de contexto para proponer un itinerario.
-No inventes lugares ni restaurantes que no estén en el catálogo.
+REGLAS IMPORTANTES:
+- SOLO puedes usar lugares, restaurantes, bares y eventos que estén dentro del "catalogo" que te envío en JSON.
+- Debes adaptar el itinerario a las "preferencias" del usuario:
+
+  * Si incluye "Histórico":
+    - Prioriza lugares históricos (plazas, catedrales, museos, castillos, conventos, casas coloniales).
+  * Si incluye "Cultural":
+    - Prioriza museos, festivales, fechas_destacadas de categoría "Arte y Cultura" o similares.
+  * Si incluye "Gastronomía":
+    - Asegúrate de incluir restaurantes todos los días y, cuando sea posible,
+      fechas_destacadas de categoría "Gastronomía y Ferias" (ferias, mercados, comida típica).
+  * Si incluye "Naturaleza":
+    - Prioriza parques, miradores, zonas verdes y excursiones (Parque Cretácico, miradores, río, etc.).
+
+- Si el usuario tiene varias preferencias, mezcla tipos de actividades en el día (mañana/tarde/noche), manteniendo variedad.
+- Respeta las fechas de las "fechas_destacadas" y sus "eventos_relacionados": solo sugiérelos si caen dentro del rango de viaje o si el hito es permanente.
+- Intenta que el plan diario tenga sentido (mañana actividades ligeras, tarde recorridos, noche cena/bar).
 
 El contexto es este (en formato JSON):
 ${jsonEncode(contexto)}
