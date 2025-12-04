@@ -1,8 +1,11 @@
+import '../services/backend_api_service.dart';
+
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // Importamos el DBService (asumimos que la ruta es correcta)
-import '../../db_service.dart';
+
 
 // ----------------------------------------------------------------------
 // IMPORTAMOS HitoDestacado y EventoRelacionado desde el archivo de la página principal.
@@ -55,7 +58,7 @@ class _DetalleFechaPageState extends State<DetalleFechaPage> {
   // Lógica de carga y parseo de Eventos
   Future<List<EventoRelacionado>> _cargarEventosDelHito(int hitoId) async {
     // Usamos el DBService real para obtener los Mapas
-    final rows = await DBService.instance.obtenerEventosPorHito(hitoId);
+    final rows = await BackendApiService.instance.obtenerEventosDeFecha(hitoId);
     // Mapeamos cada Map al objeto EventoRelacionado
     return rows.map(_parseEventoRelacionado).toList();
   }

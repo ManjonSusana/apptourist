@@ -44,7 +44,7 @@ class ItinerarioAIService {
   final DBService _db = DBService.instance;
 
   // Pon aquí tu API KEY de Gemini:
-  static const String _geminiApiKey = 'AIzaSyCcRkKOpFdvfuAqize8qrmc9P12FnG_oQQ';
+  static const String _geminiApiKey = 'AIzaSyDvHRwbJXQsiTLOlawNyA-5U8CC-6QsmeE';
   static const String _geminiModel = 'gemini-2.5-flash';
 
   // --------------------------------------------------

@@ -1,11 +1,13 @@
 import 'dart:convert';
+import 'db_service.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'db_service.dart';
+
+import 'services/backend_api_service.dart';
 
 class DetalleLugarPage extends StatefulWidget {
   final Map<String, dynamic> lugar;
@@ -18,19 +20,37 @@ class DetalleLugarPage extends StatefulWidget {
 }
 
 class _DetalleLugarPageState extends State<DetalleLugarPage> {
+  // Lista de rutas de imágenes (relative paths o URLs)
   late List imagenes;
   final PageController _pageCtrl = PageController();
 
   List<Map<String, dynamic>> comentarios = [];
   final TextEditingController comentarioCtrl = TextEditingController();
 
+  // 👉 Cambia esto según tu entorno
+  // - Emulador Android: 10.0.2.2
+  // - Dispositivo físico: IP de tu PC, ej: http://192.168.1.50:8000
+  static const String _baseUrl = 'http://192.168.0.26:8000';
+
   @override
   void initState() {
     super.initState();
+
+    // =================== PARSEO ROBUSTO DE `imagenes` ===================
+    final raw = widget.lugar["imagenes"];
+
     try {
-      imagenes = widget.lugar["imagenes"] != null
-          ? jsonDecode(widget.lugar["imagenes"])
-          : [];
+      if (raw == null) {
+        imagenes = [];
+      } else if (raw is String) {
+        // Viene como JSON string desde Laravel
+        imagenes = jsonDecode(raw) as List;
+      } else if (raw is List) {
+        // Ya viene como lista directamente
+        imagenes = raw;
+      } else {
+        imagenes = [];
+      }
     } catch (e) {
       imagenes = [];
     }
@@ -38,10 +58,25 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
     cargarComentarios();
   }
 
+  // Construye URL completa para las imágenes del backend
+  String _buildImageUrl(String path) {
+    if (path.isEmpty) return path;
+
+    // Si ya es URL absoluta, la dejamos
+    if (path.startsWith('http')) return path;
+
+    // Quitamos / inicial si existe
+    if (path.startsWith('/')) {
+      path = path.substring(1);
+    }
+
+    return '$_baseUrl/$path';
+  }
+
   // ================= COMENTARIOS =================
   Future<void> cargarComentarios() async {
-    final lista = await DBService.instance
-        .obtenerComentariosDeLugar(widget.lugar["id"]);
+    final lista =
+        await DBService.instance.obtenerComentariosDeLugar(widget.lugar["id"]);
 
     setState(() {
       comentarios = lista;
@@ -73,12 +108,14 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
 
   // Editar comentario
   Future<void> _editarComentario(int comentarioId, String textoActual) async {
-    final TextEditingController editController = TextEditingController(text: textoActual);
-    
+    final TextEditingController editController =
+        TextEditingController(text: textoActual);
+
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Editar comentario', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text('Editar comentario',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: TextField(
           controller: editController,
           maxLines: 3,
@@ -96,19 +133,22 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
             onPressed: () async {
               final nuevoTexto = editController.text.trim();
               if (nuevoTexto.isNotEmpty) {
-                await DBService.instance.editarComentario(comentarioId, nuevoTexto);
+                await DBService.instance
+                    .editarComentario(comentarioId, nuevoTexto);
                 await cargarComentarios();
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Comentario actualizado', style: GoogleFonts.poppins()),
+                    content: Text('Comentario actualizado',
+                        style: GoogleFonts.poppins()),
                     backgroundColor: Colors.green,
                   ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-            child: Text('Guardar', style: GoogleFonts.poppins(color: Colors.white)),
+            child:
+                Text('Guardar', style: GoogleFonts.poppins(color: Colors.white)),
           ),
         ],
       ),
@@ -120,7 +160,8 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Eliminar comentario', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text('Eliminar comentario',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: Text(
           '¿Estás seguro de que deseas eliminar este comentario?',
           style: GoogleFonts.poppins(),
@@ -133,7 +174,8 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text('Eliminar', style: GoogleFonts.poppins(color: Colors.white)),
+            child:
+                Text('Eliminar', style: GoogleFonts.poppins(color: Colors.white)),
           ),
         ],
       ),
@@ -144,7 +186,8 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
       await cargarComentarios();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Comentario eliminado', style: GoogleFonts.poppins()),
+          content: Text('Comentario eliminado',
+              style: GoogleFonts.poppins()),
           backgroundColor: Colors.red,
         ),
       );
@@ -168,7 +211,9 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
 
       if (permission == LocationPermission.deniedForever) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Permisos de ubicación denegados permanentemente")),
+          const SnackBar(
+              content:
+                  Text("Permisos de ubicación denegados permanentemente")),
         );
         return;
       }
@@ -180,12 +225,12 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
 
       final nombre = widget.lugar["nombre"] ?? "Lugar";
       final direccion = widget.lugar["direccion"] ?? "Sucre";
-      final destino = Uri.encodeComponent("$nombre, $direccion, Sucre Bolivia");
+      final destino =
+          Uri.encodeComponent("$nombre, $direccion, Sucre Bolivia");
 
       // URL con direcciones desde ubicación actual hasta el destino
       final uri = Uri.parse(
-        "https://www.google.com/maps/dir/?api=1&origin=${position.latitude},${position.longitude}&destination=$destino&travelmode=driving"
-      );
+          "https://www.google.com/maps/dir/?api=1&origin=${position.latitude},${position.longitude}&destination=$destino&travelmode=driving");
 
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
@@ -219,7 +264,6 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
       ),
       drawer: _menuDrawer(),
       backgroundColor: Colors.white,
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(18),
@@ -244,7 +288,6 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 22),
 
               // =============== TÍTULO DEL LUGAR ===============
@@ -296,8 +339,8 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
               GestureDetector(
                 onTap: _abrirComoLlegar,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.lightBlueAccent.shade100,
                     borderRadius: BorderRadius.circular(12),
@@ -404,13 +447,14 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
   Drawer _menuDrawer() {
     return Drawer(
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.horizontal(right: Radius.circular(25))),
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(25)),
+      ),
       child: Column(
         children: [
           Container(
             height: 140,
             width: double.infinity,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -418,10 +462,6 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
                   Color(0xFFD7CCC8),
                   Color(0xFFBCAAA4),
                 ],
-              ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(0),
-                bottomRight: Radius.circular(0),
               ),
             ),
             child: Center(
@@ -457,10 +497,16 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
                 }),
                 const Divider(height: 20, thickness: 1),
                 _menuItem(Icons.person, "Perfil", () {
-                  Navigator.pushNamed(context, "/perfil");
+                  if (widget.usuario == null) {
+                    Navigator.pushNamed(context, "/login");
+                  } else {
+                    Navigator.pushNamed(context, "/perfil",
+                        arguments: widget.usuario);
+                  }
                 }),
                 _menuItem(Icons.logout, "Cerrar sesión", () {
-                  Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, "/", (_) => false);
                 }, color: Colors.red),
               ],
             ),
@@ -470,7 +516,8 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
     );
   }
 
-  Widget _menuItem(IconData icon, String title, VoidCallback onTap, {Color? color}) {
+  Widget _menuItem(IconData icon, String title, VoidCallback onTap,
+      {Color? color}) {
     return ListTile(
       leading: Icon(icon, color: color ?? Colors.orange.shade700, size: 24),
       title: Text(
@@ -512,16 +559,19 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
                   child: const Center(child: Text("Sin imagen")),
                 );
               }
+
+              final url = _buildImageUrl(imagePath);
+
               return GestureDetector(
                 onTap: () => Navigator.pushNamed(
                   context,
                   "/fullImage",
-                  arguments: imagePath,
+                  arguments: url, // 👈 ahora se pasa la URL completa
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: Image.asset(
-                    imagePath,
+                  child: Image.network(
+                    url,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
@@ -561,9 +611,9 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
     required String fecha,
   }) {
     // Verificar si el comentario pertenece al usuario actual
-    final bool esComentarioPropio = widget.usuario != null && 
-                                     usuarioId != null && 
-                                     widget.usuario!["id"] == usuarioId;
+    final bool esComentarioPropio = widget.usuario != null &&
+        usuarioId != null &&
+        widget.usuario!["id"] == usuarioId;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -613,14 +663,17 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
-                            onPressed: () => _editarComentario(comentarioId, texto),
+                            icon: const Icon(Icons.edit,
+                                size: 18, color: Colors.blue),
+                            onPressed: () =>
+                                _editarComentario(comentarioId, texto),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                           ),
                           const SizedBox(width: 8),
                           IconButton(
-                            icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                            icon: const Icon(Icons.delete,
+                                size: 18, color: Colors.red),
                             onPressed: () => _eliminarComentario(comentarioId),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
@@ -695,7 +748,6 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
                 ),
               ),
               const SizedBox(height: 20),
-              
               _opcionCategoria(
                 'Actividades',
                 Icons.event,
@@ -720,7 +772,6 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
                 const Color(0xFFFFE9A8),
                 '/bares',
               ),
-              
               const SizedBox(height: 10),
             ],
           ),
@@ -742,7 +793,8 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: color.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12),
@@ -782,26 +834,26 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
 
   void _realizarBusqueda(String query) {
     if (query.trim().isEmpty) return;
-    
+
     final queryLower = query.toLowerCase().trim();
-    
-    if (queryLower.contains('restaurante') || 
-        queryLower.contains('comida') || 
+
+    if (queryLower.contains('restaurante') ||
+        queryLower.contains('comida') ||
         queryLower.contains('comer')) {
       Navigator.pushNamed(context, '/restaurantes');
-    } else if (queryLower.contains('bar') || 
-               queryLower.contains('bares') || 
-               queryLower.contains('cerveza') || 
-               queryLower.contains('trago')) {
+    } else if (queryLower.contains('bar') ||
+        queryLower.contains('bares') ||
+        queryLower.contains('cerveza') ||
+        queryLower.contains('trago')) {
       Navigator.pushNamed(context, '/bares');
-    } else if (queryLower.contains('actividad') || 
-               queryLower.contains('fecha') || 
-               queryLower.contains('evento') || 
-               queryLower.contains('destacada')) {
+    } else if (queryLower.contains('actividad') ||
+        queryLower.contains('fecha') ||
+        queryLower.contains('evento') ||
+        queryLower.contains('destacada')) {
       Navigator.pushNamed(context, '/fechas');
-    } else if (queryLower.contains('lugar') || 
-               queryLower.contains('sitio') || 
-               queryLower.contains('visitar')) {
+    } else if (queryLower.contains('lugar') ||
+        queryLower.contains('sitio') ||
+        queryLower.contains('visitar')) {
       Navigator.pushNamed(context, '/lugares');
     } else {
       showDialog(
@@ -847,7 +899,8 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+            horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(8),

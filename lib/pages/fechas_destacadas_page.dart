@@ -1,3 +1,5 @@
+import '../services/backend_api_service.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../db_service.dart'; // ajusta esta ruta si tu db_service está en otra carpeta
@@ -91,31 +93,48 @@ class _FechasDestacadasPageState extends State<FechasDestacadasPage> {
   // Lógica de Carga y Ordenación Cronológica de Hitos
   Future<void> _cargarHitos() async {
     try {
-      final rows = await DBService.instance.obtenerFechasDestacadas();
+      final rows = await BackendApiService.instance.obtenerFechas();
+
       final ahora = DateTime.now();
       final hoy = DateTime(ahora.year, ahora.month, ahora.day);
 
       final todos = rows.map((row) {
-        final String? fiStr = row['fechaInicio'] as String?;
-        final String? ffStr = row['fechaFin'] as String?;
+  final String? fiStr = row['fechaInicio'] as String?;
+  final String? ffStr = row['fechaFin'] as String?;
 
-        final fi = fiStr != null ? DateTime.parse(fiStr) : DateTime.now();
-        final ff = (ffStr != null && ffStr.isNotEmpty)
-            ? DateTime.parse(ffStr)
-            : null;
+  final fi = fiStr != null ? DateTime.parse(fiStr) : DateTime.now();
+  final ff = (ffStr != null && ffStr.isNotEmpty)
+      ? DateTime.parse(ffStr)
+      : null;
 
-        return HitoDestacado( 
-          id: row['id'] as int,
-          titulo: row['titulo'] as String? ?? '',
-          descripcion: row['descripcion'] as String? ?? '',
-          icono: row['icono'] as String? ?? '📍',
-          categoria: row['categoria'] as String? ?? 'Otros',
-          fechaInicio: fi,
-          fechaFin: ff,
-          permanente: (row['permanente'] as int? ?? 0) == 1,
-          imagenAsset: row['imagenAsset'] as String?,
-        );
-      }).toList();
+  // 🔹 Soportar int / bool / string para 'permanente'
+  final dynamic permRaw = row['permanente'];
+  bool esPermanente;
+
+  if (permRaw is bool) {
+    esPermanente = permRaw;
+  } else if (permRaw is int) {
+    esPermanente = permRaw == 1;
+  } else if (permRaw is String) {
+    esPermanente =
+        permRaw == '1' || permRaw.toLowerCase() == 'true';
+  } else {
+    esPermanente = false;
+  }
+
+  return HitoDestacado(
+    id: row['id'] as int,
+    titulo: row['titulo'] as String? ?? '',
+    descripcion: row['descripcion'] as String? ?? '',
+    icono: row['icono'] as String? ?? '📍',
+    categoria: row['categoria'] as String? ?? 'Otros',
+    fechaInicio: fi,
+    fechaFin: ff,
+    permanente: esPermanente,
+    imagenAsset: row['imagenAsset'] as String?,
+  );
+}).toList();
+
 
       List<HitoDestacado> vigentes = [];
       for (final e in todos) {

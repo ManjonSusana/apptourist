@@ -1,3 +1,5 @@
+import '../services/backend_api_service.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'db_service.dart';
@@ -28,29 +30,40 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
   // CARGAR DATOS
   // ============================================================
   Future<void> cargarDatos() async {
-    final db = DBService.instance;
+  final db = DBService.instance;
 
-    final lista = await db.obtenerRestaurantes();
-
-    // ⭐ Agregamos rating si no existe
-    for (var r in lista) {
-      if (r["rating"] == null) {
-        r["rating"] = 3.5 + (r["id"] % 3);
-      }
-    }
-
-    List<int> listaFav = [];
-    if (widget.usuario != null) {
-      listaFav = await db.obtenerFavoritosIds(widget.usuario!["id"], tipo: 'restaurante');
-    }
+  try {
+    final listaDesdeApi =
+        await BackendApiService.instance.obtenerRestaurantes();
 
     setState(() {
-      restaurantes = lista;
-      restaurantesFiltrados = lista;
-      favoritos = listaFav;
+      restaurantes = listaDesdeApi;
+      restaurantesFiltrados = listaDesdeApi;
+      cargando = false;
+    });
+  } catch (e) {
+    // Si falla el backend, hacemos fallback a SQLite local
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'No se pudieron cargar restaurantes desde el servidor: $e',
+          style: GoogleFonts.poppins(),
+        ),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+
+    final listaLocal = await db.obtenerRestaurantes();
+
+    setState(() {
+      restaurantes = listaLocal;
+      restaurantesFiltrados = listaLocal;
       cargando = false;
     });
   }
+}
+
+  
 
   void filtrarRestaurantes(String query) {
     setState(() {
@@ -271,10 +284,14 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
                 }),
                 const Divider(height: 20, thickness: 1),
                 _menuItem(Icons.person, "Perfil", () {
-                  Navigator.pushNamed(context, "/perfil", arguments: usuario);
+                  if (usuario == null) {
+                    Navigator.pushNamed(context, "/login");
+                  } else {
+                    Navigator.pushNamed(context, "/perfil", arguments: usuario);
+                  }
                 }),
                 _menuItem(Icons.logout, "Cerrar sesión", () {
-                  Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
+                  Navigator.pushNamedAndRemoveUntil(context, "/", (_) => false);
                 }, color: Colors.red),
               ],
             ),
