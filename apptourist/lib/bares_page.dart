@@ -271,7 +271,7 @@ class _BaresPageState extends State<BaresPage> {
                             Navigator.pushNamed(
                               context,
                               "/favoritos",
-                              arguments: {"usuario": usuario, "tipo": "bar"},
+                              arguments: {"usuario": usuario, "tipo": "Bar"},
                             );
                           },
                           child: Container(

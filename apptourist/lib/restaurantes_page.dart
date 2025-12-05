@@ -196,7 +196,7 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
                               "/favoritos",
                               arguments: {
                                 "usuario": usuario,
-                                "tipo": "restaurante",
+                                "tipo": "Restaurante",
                               },
                             );
                           },
