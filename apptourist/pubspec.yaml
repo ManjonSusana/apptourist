@@ -1,0 +1,43 @@
+name: apptourist
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  google_fonts: ^6.2.1   # <-- AGREGADO
+  
+  firebase_core: ^3.8.0
+  firebase_auth: ^5.3.1
+  firebase_storage: ^12.1.1
+  cloud_firestore: ^5.4.4
+
+  sqflite: ^2.3.0
+  path: ^1.9.0
+  path_provider: ^2.1.0
+  smooth_page_indicator: ^1.1.0
+  url_launcher: ^6.2.5
+  image_picker: ^1.0.7
+  geolocator: ^10.1.0
+  shared_preferences: ^2.2.2
+  http: ^1.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/lugares/
+    - assets/restaurantes/
+    - assets/bares/
+    - assets/fechas/
