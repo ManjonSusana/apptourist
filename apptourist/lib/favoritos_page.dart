@@ -24,7 +24,7 @@ class _FavoritosPageState extends State<FavoritosPage> {
   void initState() {
     super.initState();
     // Si viene un tipo específico desde la lista, usamos ese
-    tipoActual = widget.tipo ?? 'lugar';
+    tipoActual = widget.tipo ?? 'Lugar';
     _cargarFavoritos();
   }
 
