@@ -495,98 +495,90 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Contenido principal
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Preferencias
-                Text(
-                  '1. Selecciona tus intereses principales:',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+          RefreshIndicator(
+            onRefresh: _obtenerRecomendaciones,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Preferencias
+                  Text(
+                    '1. Selecciona tus intereses principales:',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                _buildPreferenceChips(),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 10),
+                  _buildPreferenceChips(),
+                  const SizedBox(height: 20),
 
-                // 2. Fecha
-                Text(
-                  '2. ¿Cuándo inicias tu viaje?',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                  // 2. Fecha
+                  Text(
+                    '2. ¿Cuándo inicias tu viaje?',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                _buildDatePicker(),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 10),
+                  _buildDatePicker(),
+                  const SizedBox(height: 20),
 
-                // 3. Días
-                Text(
-                  '3. Ingresa la duración de tu estadía:',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                  // 3. Días
+                  Text(
+                    '3. Ingresa la duración de tu estadía:',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                _construirCampoDias(),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 10),
+                  _construirCampoDias(),
+                  const SizedBox(height: 20),
 
-                // Botón
-                _construirBotonRecomendaciones(),
-                const SizedBox(height: 30),
+                  // Botón
+                  _construirBotonRecomendaciones(),
+                  const SizedBox(height: 30),
 
-                // Resultado - Título y botón de favorito
-                if (_itinerario.isNotEmpty)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '4. Tu Plan de Viaje por Día:',
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
+                  // Resultado - Título y botón de favorito
+                  if (_itinerario.isNotEmpty)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '4. Tu Plan de Viaje por Día:',
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                      // ❤️ Botón para guardar en favoritos
-                      if (_itinerario.isNotEmpty)
-                        _cargandoFavorito
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.pinkAccent,
+                        // ❤️ Botón para guardar en favoritos
+                        if (_itinerario.isNotEmpty)
+                          _cargandoFavorito
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(),
+                                )
+                              : IconButton(
+                                  onPressed: _toggleItinerarioFavorito,
+                                  icon: Icon(
+                                    _esItinerarioFavorito
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: Colors.red,
+                                    size: 28,
                                   ),
                                 ),
-                              )
-                            : IconButton(
-                                onPressed: _toggleItinerarioFavorito,
-                                icon: Icon(
-                                  _esItinerarioFavorito
-                                      ? Icons.favorite_rounded
-                                      : Icons.favorite_border_rounded,
-                                  color: _esItinerarioFavorito
-                                      ? Colors.pinkAccent
-                                      : Colors.grey,
-                                  size: 28,
-                                ),
-                                tooltip: _esItinerarioFavorito
-                                    ? 'Guardado en favoritos'
-                                    : 'Guardar en favoritos',
-                              ),
-                    ],
-                  ),
-                if (_itinerario.isNotEmpty) const SizedBox(height: 10),
+                      ],
+                    ),
+                  if (_itinerario.isNotEmpty) const SizedBox(height: 10),
 
-                _construirItinerario(),
-              ],
+                  _construirItinerario(),
+                ],
+              ),
             ),
           ),
 
@@ -616,13 +608,13 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const SizedBox(
-                          width: 40,
-                          height: 40,
+                          width: 24,
+                          height: 24,
                           child: CircularProgressIndicator(strokeWidth: 3),
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Generando tu itinerario…',
+                          'Cargando recomendaciones...',
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -630,11 +622,10 @@ class _RecomendacionesPageState extends State<RecomendacionesPage> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Conectando con la IA y analizando\nlos mejores lugares para ti.',
-                          textAlign: TextAlign.center,
+                          'Por favor, espera un momento.',
                           style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            color: Colors.grey[700],
+                            fontSize: 14,
+                            color: Colors.grey,
                           ),
                         ),
                       ],

@@ -27,6 +27,7 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
 
   bool esFavorito = false;
   bool cargandoFavorito = false;
+  int? favoritoId; // Store the ID of the favorite
 
   @override
   void initState() {
@@ -41,6 +42,7 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
     }
 
     cargarComentarios();
+    verificarEstadoFavorito(); // Verificar si el bar está en favoritos
   }
 
   Future<void> cargarComentarios() async {
@@ -222,11 +224,10 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
 
   // ================= FAVORITOS =================
   Future<void> _toggleFavorito() async {
-    // Verificar que el usuario esté logueado
     if (widget.usuario == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Debes iniciar sesión para agregar favoritos"),
+        SnackBar(
+          content: Text("Debes iniciar sesión para gestionar favoritos"),
         ),
       );
       return;
@@ -235,18 +236,22 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
     setState(() => cargandoFavorito = true);
 
     try {
-      final response = await BackendApiService.instance.toggleFavorito(
-        favoritableType: 'App\\Models\\Bar',
-        favoritableId: widget.bar["id"],
-      );
-
-      setState(() {
-        // Actualizar estado basado en la respuesta
-        esFavorito =
-            response['message']?.toString().contains('agregado') ?? false;
-        cargandoFavorito = false;
-      });
-
+      if (esFavorito && favoritoId != null) {
+        await BackendApiService.instance.eliminarFavorito(favoritoId!);
+        setState(() {
+          esFavorito = false;
+          favoritoId = null;
+        });
+      } else {
+        final response = await BackendApiService.instance.toggleFavorito(
+          favoritableType: "App\\Models\\Bar",
+          favoritableId: widget.bar["id"],
+        );
+        setState(() {
+          esFavorito = true;
+          favoritoId = response["id"];
+        });
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -257,10 +262,37 @@ class _DetalleBarPageState extends State<DetalleBarPage> {
         ),
       );
     } catch (e) {
-      setState(() => cargandoFavorito = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
+    } finally {
+      setState(() => cargandoFavorito = false);
+    }
+  }
+
+  Future<void> verificarEstadoFavorito() async {
+    if (widget.usuario == null) return;
+
+    try {
+      final favoritos = await BackendApiService.instance
+          .obtenerFavoritosPorTipo("Bar");
+      final barId = widget.bar["id"];
+
+      final favorito = favoritos.firstWhere(
+        (fav) => fav["favoritable"]["id"] == barId,
+        orElse: () => {},
+      );
+
+      setState(() {
+        esFavorito = favorito.isNotEmpty;
+        favoritoId = favorito["id"];
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error al verificar favoritos: ${e.toString()}"),
+        ),
+      );
     }
   }
 

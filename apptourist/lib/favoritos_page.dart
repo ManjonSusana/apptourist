@@ -43,10 +43,12 @@ class _FavoritosPageState extends State<FavoritosPage> {
         tipoActual,
       );
 
-      // Extraer los datos del objeto favoritable
+      // Extraer los datos del objeto favoritable y guardar el id de la tabla de favoritos
       final favoritosProcessados = favs.map((fav) {
         final item = Map<String, dynamic>.from(fav['favoritable'] ?? {});
         item['tipo'] = tipoActual;
+        item['favoritoId'] =
+            fav['id']; // Guardar el id de la tabla de favoritos
         return item;
       }).toList();
 
@@ -66,14 +68,11 @@ class _FavoritosPageState extends State<FavoritosPage> {
     }
   }
 
-  Future<void> _toggleFavorito(int id) async {
+  Future<void> _eliminarFavorito(int favoritoId) async {
     if (widget.usuario == null) return;
 
     try {
-      await BackendApiService.instance.toggleFavorito(
-        favoritableType: tipoActual,
-        favoritableId: id,
-      );
+      await BackendApiService.instance.eliminarFavorito(favoritoId);
       await _cargarFavoritos();
       ScaffoldMessenger.of(
         context,
@@ -340,7 +339,7 @@ class _FavoritosPageState extends State<FavoritosPage> {
             // Corazón para quitar de favoritos
             IconButton(
               icon: const Icon(Icons.favorite, color: Colors.red),
-              onPressed: () => _toggleFavorito(id),
+              onPressed: () => _eliminarFavorito(item['favoritoId'] as int),
             ),
 
             const SizedBox(width: 8),

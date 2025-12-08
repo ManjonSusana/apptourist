@@ -26,6 +26,14 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
     cargarDatos();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    cargarDatos();
+  }
+
+  // Removed didPopNext as it is not a valid lifecycle method
+
   // ============================================================
   // VERIFICAR FAVORITOS
   // ============================================================
@@ -113,7 +121,7 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
 
     try {
       await BackendApiService.instance.toggleFavorito(
-        favoritableType: 'Restaurante',
+        favoritableType: 'App\\Models\\Restaurante',
         favoritableId: restauranteId,
       );
 
@@ -124,6 +132,20 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error al guardar favorito: $e')));
     }
+  }
+
+  // ============================================================
+  // NAVEGACIÓN A PÁGINA DETALLE
+  // ============================================================
+  Future<void> _navigateToDetailPage(
+    String route,
+    Map<String, dynamic> arguments,
+  ) async {
+    await Navigator.pushNamed(context, route, arguments: arguments).then((_) {
+      setState(() {
+        cargarDatos();
+      });
+    });
   }
 
   // ============================================================
@@ -154,119 +176,124 @@ class _RestaurantesPageState extends State<RestaurantesPage> {
       drawer: _menuDrawer(usuario),
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: cargando
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // --- MENÚ HAMBURGUESA + BUSCADOR ---
-                    Row(
-                      children: [
-                        Builder(
-                          builder: (context) {
-                            return IconButton(
-                              icon: const Icon(Icons.menu, size: 28),
-                              onPressed: () =>
-                                  Scaffold.of(context).openDrawer(),
-                              padding: EdgeInsets.zero,
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: CustomSearchBar(
-                            onSearch: filtrarRestaurantes,
-                            usuario: widget.usuario,
+        child: RefreshIndicator(
+          onRefresh: cargarDatos,
+          child: cargando
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // --- MENÚ HAMBURGUESA + BUSCADOR ---
+                      Row(
+                        children: [
+                          Builder(
+                            builder: (context) {
+                              return IconButton(
+                                icon: const Icon(Icons.menu, size: 28),
+                                onPressed: () =>
+                                    Scaffold.of(context).openDrawer(),
+                                padding: EdgeInsets.zero,
+                              );
+                            },
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: CustomSearchBar(
+                              onSearch: filtrarRestaurantes,
+                              usuario: widget.usuario,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
 
-                    // Botón de Favoritos (solo si hay usuario)
-                    if (usuario != null)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(
-                              context,
-                              "/favoritos",
-                              arguments: {
-                                "usuario": usuario,
-                                "tipo": "Restaurante",
-                              },
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.brown.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.brown.shade300),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.favorite,
-                                  color: Colors.brown.shade700,
-                                  size: 20,
+                      // Botón de Favoritos (solo si hay usuario)
+                      if (usuario != null)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                "/favoritos",
+                                arguments: {
+                                  "usuario": usuario,
+                                  "tipo": "Restaurante",
+                                },
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.brown.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.brown.shade300,
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  "Mis Favoritos",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.favorite,
                                     color: Colors.brown.shade700,
+                                    size: 20,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "Mis Favoritos",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.brown.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
+
+                      const SizedBox(height: 25),
+
+                      // =====================================================
+                      // RESTAURANTES CAROS
+                      // =====================================================
+                      _tituloSeccion("RESTAURANTES CAROS"),
+                      _listaHorizontal(
+                        restaurantesFiltrados
+                            .where((r) => r["precio"] == "alto")
+                            .toList(),
                       ),
 
-                    const SizedBox(height: 25),
+                      const SizedBox(height: 25),
 
-                    // =====================================================
-                    // RESTAURANTES CAROS
-                    // =====================================================
-                    _tituloSeccion("RESTAURANTES CAROS"),
-                    _listaHorizontal(
-                      restaurantesFiltrados
-                          .where((r) => r["precio"] == "alto")
-                          .toList(),
-                    ),
+                      // =====================================================
+                      // RESTAURANTES ECONÓMICOS
+                      // =====================================================
+                      _tituloSeccion("RESTAURANTES ECONÓMICOS"),
+                      _listaHorizontal(
+                        restaurantesFiltrados
+                            .where((r) => r["precio"] == "bajo")
+                            .toList(),
+                      ),
 
-                    const SizedBox(height: 25),
+                      const SizedBox(height: 25),
 
-                    // =====================================================
-                    // RESTAURANTES ECONÓMICOS
-                    // =====================================================
-                    _tituloSeccion("RESTAURANTES ECONÓMICOS"),
-                    _listaHorizontal(
-                      restaurantesFiltrados
-                          .where((r) => r["precio"] == "bajo")
-                          .toList(),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    // =====================================================
-                    // POPULARES (TODOS)
-                    // =====================================================
-                    _tituloSeccion("POPULARES"),
-                    _listaHorizontal(restaurantesFiltrados),
-                  ],
+                      // =====================================================
+                      // POPULARES (TODOS)
+                      // =====================================================
+                      _tituloSeccion("POPULARES"),
+                      _listaHorizontal(restaurantesFiltrados),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }

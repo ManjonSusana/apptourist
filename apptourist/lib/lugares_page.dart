@@ -25,6 +25,12 @@ class _LugaresPageState extends State<LugaresPage> {
     cargarDatos();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    cargarDatos();
+  }
+
   // ============================================================
   // VERIFICAR FAVORITOS
   // ============================================================
@@ -107,7 +113,7 @@ class _LugaresPageState extends State<LugaresPage> {
 
     try {
       await BackendApiService.instance.toggleFavorito(
-        favoritableType: 'lugar',
+        favoritableType: 'App\\Models\\Lugar',
         favoritableId: lugarId,
       );
 
@@ -118,6 +124,17 @@ class _LugaresPageState extends State<LugaresPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error al guardar favorito: $e')));
     }
+  }
+
+  Future<void> _navigateToDetailPage(
+    String route,
+    Map<String, dynamic> arguments,
+  ) async {
+    await Navigator.pushNamed(context, route, arguments: arguments).then((_) {
+      setState(() {
+        cargarDatos();
+      });
+    });
   }
 
   @override
@@ -144,105 +161,115 @@ class _LugaresPageState extends State<LugaresPage> {
       ),
       drawer: _menuDrawer(usuario),
       backgroundColor: Colors.white,
-
       body: SafeArea(
-        child: cargando
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        child: RefreshIndicator(
+          onRefresh: cargarDatos,
+          child: cargando
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(18),
                   children: [
-                    // --- MENÚ HAMBURGUESA + BUSCADOR ---
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Builder(
-                          builder: (context) {
-                            return IconButton(
-                              icon: const Icon(Icons.menu, size: 28),
-                              onPressed: () =>
-                                  Scaffold.of(context).openDrawer(),
-                              padding: EdgeInsets.zero,
-                            );
-                          },
+                        // --- MENÚ HAMBURGUESA + BUSCADOR ---
+                        Row(
+                          children: [
+                            Builder(
+                              builder: (context) {
+                                return IconButton(
+                                  icon: const Icon(Icons.menu, size: 28),
+                                  onPressed: () =>
+                                      Scaffold.of(context).openDrawer(),
+                                  padding: EdgeInsets.zero,
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: CustomSearchBar(
+                                onSearch: filtrarLugares,
+                                usuario: widget.usuario,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: CustomSearchBar(
-                            onSearch: filtrarLugares,
-                            usuario: widget.usuario,
+                        const SizedBox(height: 16),
+
+                        // Botón de Favoritos (solo si hay usuario)
+                        if (usuario != null)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  "/favoritos",
+                                  arguments: {
+                                    "usuario": usuario,
+                                    "tipo": "Lugar",
+                                  },
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.brown.shade100,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.brown.shade300,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.favorite,
+                                      color: Colors.brown.shade700,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      "Mis Favoritos",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.brown.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
+
+                        const SizedBox(height: 25),
+
+                        // --- Título sección ---
+                        _tituloSeccion("LUGARES CAROS"),
+                        _listaHorizontal(
+                          lugaresFiltrados
+                              .where((l) => l["categoria"] == "caro")
+                              .toList(),
+                        ),
+
+                        const SizedBox(height: 25),
+
+                        _tituloSeccion("LUGARES ECONÓMICOS"),
+                        _listaHorizontal(
+                          lugaresFiltrados
+                              .where((l) => l["categoria"] == "economico")
+                              .toList(),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-
-                    // Botón de Favoritos (solo si hay usuario)
-                    if (usuario != null)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(
-                              context,
-                              "/favoritos",
-                              arguments: {"usuario": usuario, "tipo": "Lugar"},
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.brown.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.brown.shade300),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.favorite,
-                                  color: Colors.brown.shade700,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  "Mis Favoritos",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.brown.shade700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    const SizedBox(height: 25),
-
-                    // --- Título sección ---
-                    _tituloSeccion("LUGARES CAROS"),
-                    _listaHorizontal(
-                      lugaresFiltrados
-                          .where((l) => l["categoria"] == "caro")
-                          .toList(),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    _tituloSeccion("LUGARES ECONÓMICOS"),
-                    _listaHorizontal(
-                      lugaresFiltrados
-                          .where((l) => l["categoria"] == "economico")
-                          .toList(),
-                    ),
                   ],
                 ),
-              ),
+        ),
       ),
     );
   }

@@ -31,6 +31,7 @@ class _DetalleRestaurantePageState extends State<DetalleRestaurantePage> {
 
   bool esFavorito = false;
   bool cargandoFavorito = false;
+  int? favoritoId; // Store the ID of the favorite
 
   @override
   void initState() {
@@ -54,24 +55,24 @@ class _DetalleRestaurantePageState extends State<DetalleRestaurantePage> {
 
     try {
       final favoritos = await BackendApiService.instance
-          .obtenerFavoritosPorTipo('Restaurante');
+          .obtenerFavoritosPorTipo("Restaurante");
+      final restauranteId = widget.restaurante["id"];
 
-      final restauranteId = widget.restaurante['id'];
-      final estEnFavoritos = favoritos.any((fav) {
-        final favoritable = fav['favoritable'] ?? {};
-        return favoritable['id'] == restauranteId;
+      final favorito = favoritos.firstWhere(
+        (fav) => fav["favoritable"]["id"] == restauranteId,
+        orElse: () => {},
+      );
+
+      setState(() {
+        esFavorito = favorito.isNotEmpty;
+        favoritoId = favorito["id"];
       });
-
-      if (mounted) {
-        setState(() {
-          esFavorito = estEnFavoritos;
-        });
-      }
     } catch (e) {
-      // Silenciosamente fallar si hay error
-      if (mounted) {
-        print('Error al verificar favoritos: $e');
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error al verificar favoritos: ${e.toString()}"),
+        ),
+      );
     }
   }
 
@@ -256,11 +257,10 @@ class _DetalleRestaurantePageState extends State<DetalleRestaurantePage> {
 
   // ================= FAVORITOS =================
   Future<void> _toggleFavorito() async {
-    // Verificar que el usuario esté logueado
     if (widget.usuario == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Debes iniciar sesión para agregar favoritos"),
+        SnackBar(
+          content: Text("Debes iniciar sesión para gestionar favoritos"),
         ),
       );
       return;
@@ -269,18 +269,22 @@ class _DetalleRestaurantePageState extends State<DetalleRestaurantePage> {
     setState(() => cargandoFavorito = true);
 
     try {
-      final response = await BackendApiService.instance.toggleFavorito(
-        favoritableType: 'App\\Models\\Restaurante',
-        favoritableId: widget.restaurante["id"],
-      );
-
-      setState(() {
-        // Actualizar estado basado en la respuesta
-        esFavorito =
-            response['message']?.toString().contains('agregado') ?? false;
-        cargandoFavorito = false;
-      });
-
+      if (esFavorito && favoritoId != null) {
+        await BackendApiService.instance.eliminarFavorito(favoritoId!);
+        setState(() {
+          esFavorito = false;
+          favoritoId = null;
+        });
+      } else {
+        final response = await BackendApiService.instance.toggleFavorito(
+          favoritableType: "App\\Models\\Restaurante",
+          favoritableId: widget.restaurante["id"],
+        );
+        setState(() {
+          esFavorito = true;
+          favoritoId = response["id"];
+        });
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -291,10 +295,11 @@ class _DetalleRestaurantePageState extends State<DetalleRestaurantePage> {
         ),
       );
     } catch (e) {
-      setState(() => cargandoFavorito = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
+    } finally {
+      setState(() => cargandoFavorito = false);
     }
   }
 

@@ -29,6 +29,7 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
 
   bool esFavorito = false;
   bool cargandoFavorito = false;
+  int? favoritoId; // Store the ID of the favorite
 
   // 👉 Cambia esto según tu entorno
   // - Emulador Android: 10.0.2.2
@@ -59,6 +60,33 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
     }
 
     cargarComentarios();
+    verificarEstadoFavorito(); // Verificar si el lugar está en favoritos
+  }
+
+  Future<void> verificarEstadoFavorito() async {
+    if (widget.usuario == null) return;
+
+    try {
+      final favoritos = await BackendApiService.instance
+          .obtenerFavoritosPorTipo("Lugar");
+      final lugarId = widget.lugar["id"];
+
+      final favorito = favoritos.firstWhere(
+        (fav) => fav["favoritable"]["id"] == lugarId,
+        orElse: () => {},
+      );
+
+      setState(() {
+        esFavorito = favorito.isNotEmpty;
+        favoritoId = favorito["id"];
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error al verificar favoritos: ${e.toString()}"),
+        ),
+      );
+    }
   }
 
   // Construye URL completa para las imágenes del backend
@@ -258,11 +286,10 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
 
   // ================= FAVORITOS =================
   Future<void> _toggleFavorito() async {
-    // Verificar que el usuario esté logueado
     if (widget.usuario == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Debes iniciar sesión para agregar favoritos"),
+        SnackBar(
+          content: Text("Debes iniciar sesión para gestionar favoritos"),
         ),
       );
       return;
@@ -271,17 +298,22 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
     setState(() => cargandoFavorito = true);
 
     try {
-      final response = await BackendApiService.instance.toggleFavorito(
-        favoritableType: 'App\\Models\\Lugar',
-        favoritableId: widget.lugar["id"],
-      );
-
-      setState(() {
-        // Actualizar estado basado en la respuesta
-        esFavorito =
-            response['message']?.toString().contains('agregado') ?? false;
-        cargandoFavorito = false;
-      });
+      if (esFavorito && favoritoId != null) {
+        await BackendApiService.instance.eliminarFavorito(favoritoId!);
+        setState(() {
+          esFavorito = false;
+          favoritoId = null;
+        });
+      } else {
+        final response = await BackendApiService.instance.toggleFavorito(
+          favoritableType: "App\\Models\\Lugar",
+          favoritableId: widget.lugar["id"],
+        );
+        setState(() {
+          esFavorito = true;
+          favoritoId = response["id"];
+        });
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -293,10 +325,11 @@ class _DetalleLugarPageState extends State<DetalleLugarPage> {
         ),
       );
     } catch (e) {
-      setState(() => cargandoFavorito = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
+    } finally {
+      setState(() => cargandoFavorito = false);
     }
   }
 

@@ -8,7 +8,8 @@ class BackendApiService {
 
   // ⛔ Cambia esta IP por la de tu PC
   // Ejemplo: 'http://192.168.0.26:8000/api';
-  static const String _baseUrl = 'http://127.0.0.1:8000/api';
+  // static const String _baseUrl = 'http://127.0.0.1:8000/api';
+  static const String _baseUrl = 'http://192.168.100.8:8000/api';
 
   // Token JWT almacenado en memoria
   String? _jwtToken;
@@ -517,7 +518,7 @@ class BackendApiService {
       throw Exception('No hay token JWT. Debes iniciar sesión primero.');
     }
 
-    final uri = Uri.parse('$_baseUrl/itinerarios/favoritos/$id');
+    final uri = Uri.parse('$_baseUrl/itinerarios/$id');
 
     final resp = await http.delete(
       uri,
@@ -527,6 +528,65 @@ class BackendApiService {
     if (resp.statusCode != 200 && resp.statusCode != 204) {
       throw Exception(
         'Error al eliminar itinerario: ${resp.statusCode} ${resp.body}',
+      );
+    }
+  }
+
+  /// Verifica si un elemento es favorito
+  Future<bool> verificarFavorito({
+    required String favoritableType,
+    required int favoritableId,
+  }) async {
+    if (_jwtToken == null) {
+      throw Exception('No hay token JWT. Debes iniciar sesión primero.');
+    }
+
+    final uri = Uri.parse('$_baseUrl/favoritos/tipo/$favoritableType');
+
+    final resp = await http.get(
+      uri,
+      headers: {'Authorization': 'Bearer $_jwtToken'},
+    );
+
+    if (resp.statusCode != 200) {
+      throw Exception(
+        'Error al obtener favoritos de tipo $favoritableType: ${resp.statusCode} ${resp.body}',
+      );
+    }
+
+    final data = jsonDecode(resp.body);
+
+    if (data is List) {
+      return data.any((fav) {
+        final favoritable = fav['favoritable'] ?? {};
+        return favoritable['id'] == favoritableId;
+      });
+    } else if (data is Map && data['data'] is List) {
+      return (data['data'] as List).any((fav) {
+        final favoritable = fav['favoritable'] ?? {};
+        return favoritable['id'] == favoritableId;
+      });
+    }
+
+    return false;
+  }
+
+  /// Elimina un favorito por su ID
+  Future<void> eliminarFavorito(int favoritableId) async {
+    if (_jwtToken == null) {
+      throw Exception('No hay token JWT. Debes iniciar sesión primero.');
+    }
+
+    final uri = Uri.parse('$_baseUrl/favoritos/$favoritableId');
+
+    final resp = await http.delete(
+      uri,
+      headers: {'Authorization': 'Bearer $_jwtToken'},
+    );
+
+    if (resp.statusCode != 200 && resp.statusCode != 204) {
+      throw Exception(
+        'Error al eliminar favorito: ${resp.statusCode} ${resp.body}',
       );
     }
   }
