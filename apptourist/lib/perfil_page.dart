@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'db_service.dart';
+import 'home_page.dart';
 
 class PerfilPage extends StatefulWidget {
   final Map<String, dynamic> usuario;
@@ -17,25 +18,29 @@ class _PerfilPageState extends State<PerfilPage> {
   final _formKey = GlobalKey<FormState>();
   bool _editando = false;
   bool _guardando = false;
-  
+
   late TextEditingController _nombreController;
   late TextEditingController _telefonoController;
   late TextEditingController _bioController;
-  
+
   String? _fotoPerfil;
   String? _lugaresPreferidos;
   String? _restaurantesPreferidos;
   String? _ambiente;
-  
+
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
-    _nombreController = TextEditingController(text: widget.usuario["nombre"] ?? "");
-    _telefonoController = TextEditingController(text: widget.usuario["telefono"] ?? "");
+    _nombreController = TextEditingController(
+      text: widget.usuario["nombre"] ?? "",
+    );
+    _telefonoController = TextEditingController(
+      text: widget.usuario["telefono"] ?? "",
+    );
     _bioController = TextEditingController(text: widget.usuario["bio"] ?? "");
-    
+
     _fotoPerfil = widget.usuario["fotoPerfil"];
     _lugaresPreferidos = widget.usuario["lugaresPreferidos"];
     _restaurantesPreferidos = widget.usuario["restaurantesPreferidos"];
@@ -57,7 +62,7 @@ class _PerfilPageState extends State<PerfilPage> {
       maxHeight: 512,
       imageQuality: 85,
     );
-    
+
     if (image != null) {
       setState(() {
         _fotoPerfil = image.path;
@@ -87,25 +92,35 @@ class _PerfilPageState extends State<PerfilPage> {
       print("✓ Perfil actualizado: $resultado filas");
 
       // Recargar los datos del usuario desde la base de datos
-      final usuarioActualizado = await DBService.instance.obtenerUsuarioPorId(widget.usuario["id"]);
-      
+      final usuarioActualizado = await DBService.instance.obtenerUsuarioPorId(
+        widget.usuario["id"],
+      );
+
       if (mounted) {
         setState(() {
           _editando = false;
           _guardando = false;
           if (usuarioActualizado != null) {
             _fotoPerfil = usuarioActualizado["fotoPerfil"] ?? _fotoPerfil;
-            _telefonoController.text = usuarioActualizado["telefono"] ?? _telefonoController.text;
-            _bioController.text = usuarioActualizado["bio"] ?? _bioController.text;
-            _lugaresPreferidos = usuarioActualizado["lugaresPreferidos"] ?? _lugaresPreferidos;
-            _restaurantesPreferidos = usuarioActualizado["restaurantesPreferidos"] ?? _restaurantesPreferidos;
+            _telefonoController.text =
+                usuarioActualizado["telefono"] ?? _telefonoController.text;
+            _bioController.text =
+                usuarioActualizado["bio"] ?? _bioController.text;
+            _lugaresPreferidos =
+                usuarioActualizado["lugaresPreferidos"] ?? _lugaresPreferidos;
+            _restaurantesPreferidos =
+                usuarioActualizado["restaurantesPreferidos"] ??
+                _restaurantesPreferidos;
             _ambiente = usuarioActualizado["ambiente"] ?? _ambiente;
           }
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✓ Perfil actualizado exitosamente', style: GoogleFonts.poppins()),
+            content: Text(
+              '✓ Perfil actualizado exitosamente',
+              style: GoogleFonts.poppins(),
+            ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -135,290 +150,331 @@ class _PerfilPageState extends State<PerfilPage> {
     return WillPopScope(
       onWillPop: () async {
         // Retornar el usuario actualizado cuando se cierra la página
-        final usuarioActualizado = await DBService.instance.obtenerUsuarioPorId(widget.usuario["id"]);
+        final usuarioActualizado = await DBService.instance.obtenerUsuarioPorId(
+          widget.usuario["id"],
+        );
         Navigator.pop(context, usuarioActualizado);
         return false;
       },
       child: Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: CustomScrollView(
-        slivers: [
-          // App Bar con gradiente
-          SliverAppBar(
-            expandedHeight: 80,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFFB89968), Color(0xFFA67C52)],
+        backgroundColor: Colors.grey[50],
+        body: CustomScrollView(
+          slivers: [
+            // App Bar con gradiente
+            SliverAppBar(
+              expandedHeight: 80,
+              pinned: true,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFB89968), Color(0xFFA67C52)],
+                    ),
                   ),
-                ),
-                child: Center(
-                  child: Text(
-                    'Mi Perfil',
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  child: Center(
+                    child: Text(
+                      'Mi Perfil',
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(_editando ? Icons.close : Icons.edit),
+              leading: IconButton(
+                icon: const Icon(Icons.home, color: Colors.white),
+                tooltip: 'Volver al inicio',
                 onPressed: () {
-                  setState(() {
-                    _editando = !_editando;
-                  });
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HomePage(usuario: widget.usuario),
+                    ),
+                    (route) => false,
+                  );
                 },
               ),
-            ],
-          ),
+              actions: [
+                IconButton(
+                  icon: Icon(_editando ? Icons.close : Icons.edit),
+                  onPressed: () {
+                    setState(() {
+                      _editando = !_editando;
+                    });
+                  },
+                ),
+              ],
+            ),
 
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // Foto de perfil
-                    Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 70,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage: _fotoPerfil != null
-                              ? FileImage(File(_fotoPerfil!))
-                              : null,
-                          child: _fotoPerfil == null
-                              ? Text(
-                                  nombre.isNotEmpty ? nombre[0].toUpperCase() : "?",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 50,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      // Foto de perfil
+                      Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 70,
+                            backgroundColor: Colors.grey[300],
+                            backgroundImage: _fotoPerfil != null
+                                ? FileImage(File(_fotoPerfil!))
+                                : null,
+                            child: _fotoPerfil == null
+                                ? Text(
+                                    nombre.isNotEmpty
+                                        ? nombre[0].toUpperCase()
+                                        : "?",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 50,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          if (_editando)
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _seleccionarFoto,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.shade400,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 3,
+                                    ),
                                   ),
-                                )
-                              : null,
-                        ),
-                        if (_editando)
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: GestureDetector(
-                              onTap: _seleccionarFoto,
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.shade400,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 3),
-                                ),
-                                child: const Icon(
-                                  Icons.camera_alt,
-                                  color: Colors.white,
-                                  size: 24,
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Nombre
-                    Text(
-                      nombre,
-                      style: GoogleFonts.poppins(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
+                        ],
                       ),
-                    ),
 
-                    const SizedBox(height: 8),
+                      const SizedBox(height: 20),
 
-                    // Correo
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.email, size: 18, color: Colors.grey[600]),
-                        const SizedBox(width: 6),
-                        Text(
-                          correo,
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            color: Colors.grey[700],
+                      // Nombre
+                      Text(
+                        nombre,
+                        style: GoogleFonts.poppins(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Correo
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.email, size: 18, color: Colors.grey[600]),
+                          const SizedBox(width: 6),
+                          Text(
+                            correo,
+                            style: GoogleFonts.poppins(
+                              fontSize: 15,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // Información personal
+                      _buildSeccionCard(
+                        titulo: 'Información Personal',
+                        icono: Icons.person,
+                        children: [
+                          _buildCampoTexto(
+                            controller: _telefonoController,
+                            label: 'Teléfono',
+                            icon: Icons.phone,
+                            habilitado: _editando,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildCampoTexto(
+                            controller: _bioController,
+                            label: 'Biografía',
+                            icon: Icons.text_snippet,
+                            habilitado: _editando,
+                            maxLineas: 3,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Preferencias
+                      _buildSeccionCard(
+                        titulo: 'Preferencias',
+                        icono: Icons.favorite,
+                        children: [
+                          _buildSelectorPreferencia(
+                            label: 'Tipos de lugares favoritos',
+                            icon: Icons.place,
+                            opciones: [
+                              'Históricos',
+                              'Naturales',
+                              'Museos',
+                              'Parques',
+                              'Monumentos',
+                            ],
+                            valorActual: _lugaresPreferidos,
+                            onChanged: _editando
+                                ? (valor) =>
+                                      setState(() => _lugaresPreferidos = valor)
+                                : null,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildSelectorPreferencia(
+                            label: 'Tipo de comida favorita',
+                            icon: Icons.restaurant,
+                            opciones: [
+                              'Internacional',
+                              'Tradicional',
+                              'Vegetariana',
+                              'Gourmet',
+                              'Casual',
+                            ],
+                            valorActual: _restaurantesPreferidos,
+                            onChanged: _editando
+                                ? (valor) => setState(
+                                    () => _restaurantesPreferidos = valor,
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildSelectorPreferencia(
+                            label: 'Ambiente preferido',
+                            icon: Icons.wb_sunny,
+                            opciones: [
+                              'Tranquilo',
+                              'Animado',
+                              'Romántico',
+                              'Familiar',
+                              'Premium',
+                            ],
+                            valorActual: _ambiente,
+                            onChanged: _editando
+                                ? (valor) => setState(() => _ambiente = valor)
+                                : null,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // Botones
+                      if (_editando)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _guardando ? null : _guardarPerfil,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              disabledBackgroundColor: Colors.grey,
+                            ),
+                            child: _guardando
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Guardando...',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 16,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    'Guardar Cambios',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                           ),
                         ),
-                      ],
-                    ),
 
-                    const SizedBox(height: 30),
+                      const SizedBox(height: 12),
 
-                    // Información personal
-                    _buildSeccionCard(
-                      titulo: 'Información Personal',
-                      icono: Icons.person,
-                      children: [
-                        _buildCampoTexto(
-                          controller: _telefonoController,
-                          label: 'Teléfono',
-                          icon: Icons.phone,
-                          habilitado: _editando,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildCampoTexto(
-                          controller: _bioController,
-                          label: 'Biografía',
-                          icon: Icons.text_snippet,
-                          habilitado: _editando,
-                          maxLineas: 3,
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Preferencias
-                    _buildSeccionCard(
-                      titulo: 'Preferencias',
-                      icono: Icons.favorite,
-                      children: [
-                        _buildSelectorPreferencia(
-                          label: 'Tipos de lugares favoritos',
-                          icon: Icons.place,
-                          opciones: ['Históricos', 'Naturales', 'Museos', 'Parques', 'Monumentos'],
-                          valorActual: _lugaresPreferidos,
-                          onChanged: _editando
-                              ? (valor) => setState(() => _lugaresPreferidos = valor)
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildSelectorPreferencia(
-                          label: 'Tipo de comida favorita',
-                          icon: Icons.restaurant,
-                          opciones: ['Internacional', 'Tradicional', 'Vegetariana', 'Gourmet', 'Casual'],
-                          valorActual: _restaurantesPreferidos,
-                          onChanged: _editando
-                              ? (valor) => setState(() => _restaurantesPreferidos = valor)
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildSelectorPreferencia(
-                          label: 'Ambiente preferido',
-                          icon: Icons.wb_sunny,
-                          opciones: ['Tranquilo', 'Animado', 'Romántico', 'Familiar', 'Premium'],
-                          valorActual: _ambiente,
-                          onChanged: _editando
-                              ? (valor) => setState(() => _ambiente = valor)
-                              : null,
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // Botones
-                    if (_editando)
+                      // Botón cerrar sesión
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _guardando ? null : _guardarPerfil,
+                          onPressed: () {
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              "/login",
+                              (_) => false,
+                            );
+                          },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: Colors.redAccent,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            disabledBackgroundColor: Colors.grey,
                           ),
-                          child: _guardando
-                              ? Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Guardando...',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 16,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Text(
-                                  'Guardar Cambios',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.logout, color: Colors.white),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Cerrar Sesión',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                        ),
-                      ),
-
-                    const SizedBox(height: 12),
-
-                    // Botón cerrar sesión
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            "/login",
-                            (_) => false,
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.logout, color: Colors.white),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Cerrar Sesión',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 30),
-                  ],
+                      const SizedBox(height: 30),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -481,9 +537,7 @@ class _PerfilPageState extends State<PerfilPage> {
         labelText: label,
         labelStyle: GoogleFonts.poppins(),
         prefixIcon: Icon(icon, color: Colors.orange.shade600),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -515,9 +569,7 @@ class _PerfilPageState extends State<PerfilPage> {
         labelText: label,
         labelStyle: GoogleFonts.poppins(),
         prefixIcon: Icon(icon, color: Colors.orange.shade600),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey[300]!),

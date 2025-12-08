@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'db_service.dart';
+import 'services/backend_api_service.dart';
 import 'home_page.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -32,35 +33,36 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => cargando = true);
 
     try {
-      // Registrar usuario en SQLite
-      final id = await DBService.instance.registrarUsuario(
-        nombre,
+      // Crear usuario
+      final data = await BackendApiService.instance.crearUsuario(
+        nombre: nombre,
+        correo: correo,
+        password: password,
+      );
+
+      // Login automático para obtener JWT
+      final loginData = await BackendApiService.instance.login(
         correo,
         password,
       );
 
-      // Construimos el MAPA completo del usuario
       final usuarioCompleto = {
-        "id": id,
-        "nombre": nombre,
-        "correo": correo,
+        "id": data["id"],
+        "nombre": data["name"],
+        "correo": data["email"],
+        "token": loginData["access_token"],
       };
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Usuario registrado correctamente")),
       );
-
-      // 🔥 Enviar usuario completo al HomePage
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => HomePage(usuario: usuarioCompleto),
-        ),
+        MaterialPageRoute(builder: (_) => HomePage(usuario: usuarioCompleto)),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: ${e.toString()}")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: \\${e.toString()}")));
     }
 
     setState(() => cargando = false);
@@ -87,7 +89,9 @@ class _RegisterPageState extends State<RegisterPage> {
               Text(
                 "Registro",
                 style: GoogleFonts.poppins(
-                    fontSize: 32, fontWeight: FontWeight.bold),
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
 
               const SizedBox(height: 40),
@@ -139,22 +143,22 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget campo(String titulo, TextEditingController ctrl,
-      {bool oculto = false}) {
+  Widget campo(
+    String titulo,
+    TextEditingController ctrl, {
+    bool oculto = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           titulo,
-          style:
-              GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         TextField(
           controller: ctrl,
           obscureText: oculto,
-          decoration: const InputDecoration(
-            border: UnderlineInputBorder(),
-          ),
+          decoration: const InputDecoration(border: UnderlineInputBorder()),
         ),
       ],
     );

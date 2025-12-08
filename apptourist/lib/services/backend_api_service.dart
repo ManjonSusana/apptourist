@@ -38,6 +38,27 @@ class BackendApiService {
     }
   }
 
+  /// Crea un nuevo usuario en el backend
+  Future<Map<String, dynamic>> crearUsuario({
+    required String nombre,
+    required String correo,
+    required String password,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/users');
+    final resp = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': nombre, 'email': correo, 'password': password}),
+    );
+    if (resp.statusCode != 200 && resp.statusCode != 201) {
+      throw Exception(
+        'Error al crear usuario: \\${resp.statusCode} \\${resp.body}',
+      );
+    }
+    final data = jsonDecode(resp.body);
+    return Map<String, dynamic>.from(data);
+  }
+
   Future<Map<String, dynamic>> obtenerLugarPorId(int id) async {
     final uri = Uri.parse('$_baseUrl/lugares/$id');
 

@@ -8,16 +8,25 @@ use App\Http\Controllers\BarController;
 use App\Http\Controllers\FechaDestacadaController;
 use App\Http\Controllers\FavoritoController;
 use App\Http\Controllers\ItinerarioController;
+use App\Http\Controllers\UserController;
 
 // ============================================
-// Rutas públicas de autenticación
+// Rutas públicas de autenticación y usuarios
 // ============================================
 Route::post('/login', [AuthController::class, 'login']);
+
+// Usuarios (registro y listado públicos)
+Route::get('/users', [UserController::class, 'index']);
+Route::post('/users', [UserController::class, 'store']);
+Route::get('/users/{id}', [UserController::class, 'show']);
 
 // ============================================
 // Rutas protegidas por JWT
 // ============================================
 Route::middleware('auth:api')->group(function () {
+    // Usuarios (editar y borrar)
+    Route::put('/users/{id}', [UserController::class, 'update']);
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
     // Autenticación
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
